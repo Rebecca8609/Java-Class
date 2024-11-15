@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>評論總覽</title>
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body>
+    <div th:replace="~{layout/saHeader}"></div>
+    <div class="container mt-4">
+        <div class="mb-4">
+            <h2>查詢評論</h2>
+            <input type="text" id="searchInput" class="form-control"
+                   placeholder="輸入評論資料來查詢" onkeyup="searchReview()">
+        </div>
+
+        <div class="mb-4">
+            <h2>評論列表</h2>
+            <!-- 垂直置中style="vertical-align: middle;" -->
+            <table id="rvwTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th style="width:10%">評論ID</th>
+                        <th style="width:10%">訂單編號</th>
+                        <th style="width:8%">評論日期</th>
+                        <th style="width:8%">商品圖片</th>
+                        <th class="col-3">評論內容</th>
+                        <th>評分</th>
+                        <th style="width:10%">評論者</th>
+                        <th>顯示狀態</th>
+                        <th colspan="2">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="rvwTableBody" class="table table-striped">
+                    <!-- 資料將通過 JavaScript 動態插入 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+        function loadReviews(pageNumber = 1) {
+            $.ajax({
+                url: `/api/reviews?p=${pageNumber}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    const reviews = data.content; // 取得 Page 物件中的 content 部分
+                    const tbody = $('#rvwTableBody');
+                    tbody.empty(); // 清空表格內容
+
+                    // 動態插入資料
+                    reviews.forEach(review => {
+                        tbody.append(`
+                            <tr>
+                                <td>${review.reviewId}</td>
+                                <td>${review.reviewOrderId}</td>
+                                <td>${new Date(review.reviewDate).toLocaleString('zh-TW')}</td>
+                                <td><img src="/reviewimgs/${review.reviewImg}" alt="評論圖片" style="width:100px;"></td>
+                                <td class="col-3">
+	                                <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
+                                </td>
+                                <td>${review.revieweValuation}</td>
+                                <td>${review.reviewer}</td>
+                                <td>${review.reviewStatus === 1 ? '顯示' : '隱藏'}</td>
+                                <td>
+	                                <select class="form-select" aria-label="Default select example">
+	                                	<option selected>請選擇狀態</option>
+	  									<option value="1">顯示</option>
+	  									<option value="0">不顯示</option>
+	                                </select>
+                                </td>
+                                <td><button type="button" class="btn btn-outline-success">更新</button></td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function(err) {
+                    console.error("Error loading reviews:", err);
+                }
+            });
+        }
+
+        // 初次載入評論
+        $(document).ready(function() {
+            loadReviews();
+        });
+    </script>
+</body>
+</html>

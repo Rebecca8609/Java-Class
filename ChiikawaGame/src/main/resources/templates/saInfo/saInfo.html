@@ -1,0 +1,141 @@
+<!-- (Mantle)  -->
+<!-- http://localhost:8080/saInfo -->
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理員資料總覽</title>
+
+<!-- import Bootstrap CSS -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+
+<body>
+	<!-- import saHeader -->
+	<div th:replace="~{layout/saHeader}"></div>
+	<div class="container mt-4">
+
+		<!-- 查詢管理員div -->
+		<div class="mb-4">
+			<h2>查詢管理員</h2>
+			<input type="text" id="searchInput" class="form-control"
+				placeholder="輸入管理員資料來查詢" onkeyup="searchSaInfo()">
+		</div>
+		
+		
+		<!-- 新增管理員div -->
+		<div class="mb-4">
+			<h2>新增管理員</h2>
+			<table class="table">
+				<tr>
+					<td><input type="text" id="newSaName" class="form-control"
+						placeholder="管理員姓名"></td>
+					<td><input type="email" id="newSaEmail" class="form-control"
+						placeholder="管理員信箱"></td>
+					<td>
+						<div class="input-group">
+							<input type="password" id="newSaPassword" class="form-control"
+								placeholder="管理員密碼">
+							<button class="btn btn-outline-secondary toggle-password"
+								onclick="togglePassword('newSaPassword')">顯示密碼</button>
+						</div>
+					</td>
+					<td><input type="text" id="newSaTel" class="form-control"
+						placeholder="管理員電話"></td>
+					<td><select id="newSaStatus" class="form-select">
+							<option value="1">帳號使用中</option>
+							<option value="2">帳號停權</option>
+					</select></td>
+					<td>
+						<button class="btn btn-primary" onclick="addSa()">新增</button>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- 管理員列表div -->
+		<div class="mb-4">
+			<h2>管理員列表</h2>
+			<table id="saTable" class="table table-striped">
+				<thead>
+					<tr>
+						<th>管理員ID</th>
+						<th>管理員姓名</th>
+						<th>管理員信箱</th>
+						<th>管理員密碼</th>
+						<th>管理員電話</th>
+						<th>帳號使用狀態</th>
+					</tr>
+				</thead>
+				<tbody id="saTableBody">
+					<!-- 資料由 JavaScript 動態插入 -->
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- 正確引用 Bootstrap JavaScript -->
+	<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+
+	<!-- JavaScript 程式碼 -->
+	<script>
+        // 初始化頁面時載入管理員資料
+        document.addEventListener("DOMContentLoaded", loadSaInfo);
+        
+
+        // 查詢管理員資料
+        function searchSaInfo() {
+            const filter = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#saTableBody tr");
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(filter));
+                row.style.display = match ? "" : "none";
+            });
+        }
+
+        
+        // 載入管理員資料並顯示在表格中
+        function loadSaInfo() {
+            fetch("/saInfo/json")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data)) {
+                        throw new Error("返回的資料不是陣列格式");
+                    }
+
+                    const tableBody = document.getElementById("saTableBody");
+                    tableBody.innerHTML = ""; // 清空表格內容
+
+                    // 將 API 返回的資料插入表格
+                    data.forEach(sa => {
+                        const row = `
+                            <tr>
+                                <td>${sa.saId}</td>
+                                <td>${sa.saName}</td>
+                                <td>${sa.saEmail}</td>
+                                <td>${sa.saPassword}</td>
+                                <td>${sa.saTel}</td>
+                                <td>${sa.saStatus == 1 ? '帳號使用中' : '帳號停權'}</td>
+                            </tr>
+                        `;
+                        tableBody.insertAdjacentHTML("beforeend", row);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("無法載入管理員資料，請稍後再試。");
+                });
+        }
+    </script>
+</body>
+</html>
