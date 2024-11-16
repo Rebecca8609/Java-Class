@@ -37,6 +37,32 @@
                     <!-- 資料將通過 JavaScript 動態插入 -->
                 </tbody>
             </table>
+            
+            <ul class="pagination">
+                <!-- 上一頁按鈕 -->
+                <th:block th:switch="${ page.number+1 == 1 }">
+                    <li th:case="${false}" class="page-item">
+                        <a th:href="@{/review/reviewManagement(p=${page.number})}" class="page-link">上一頁</a>
+                    </li>
+                    <li th:case="${true}" class="page-item disabled"><span class="page-link">在第一頁</span></li>
+                </th:block>
+                <!-- 頁數按鈕 -->
+                <th:block th:each=" onePageNum : ${#numbers.sequence(1, page.totalPages)}">
+                    <th:block th:switch="${ onePageNum == page.number+1 }">
+                        <li th:case="${true}" class="page-item active">
+                            <span class="page-link">[[ ${onePageNum} ]]</span>
+                        </li>
+                        <li th:case="${false}" class="page-item">
+                            <a class="page-link" th:href="@{/review/reviewManagement(p=${onePageNum})}">[[ ${onePageNum} ]]</a>
+                        </li> 
+                    </th:block>
+                </th:block>
+                <!-- 下一頁按鈕 -->
+                <th:block th:switch="${ page.number+1 == page.totalPages }">
+                    <li th:case="${false}" class="page-item"><a th:href="@{/review/reviewManagement(p=${page.number + 2})}" class="page-link">下一頁</a></li>
+                    <li th:case="${true}" class="page-item disabled"><span class="page-link">在最後一頁</span></li>
+                </th:block>
+            </ul>
         </div>
     </div>
 
@@ -44,17 +70,17 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
+        // 加載評論
         function loadReviews(pageNumber = 1) {
             $.ajax({
                 url: `/api/reviews?p=${pageNumber}`,
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
-                    const reviews = data.content; // 取得 Page 物件中的 content 部分
+                    const reviews = data.content; // 取得 Page 物件中的 content
                     const tbody = $('#rvwTableBody');
                     tbody.empty(); // 清空表格內容
-
-                    // 動態插入資料
+    
                     reviews.forEach(review => {
                         tbody.append(`
                             <tr>
@@ -62,20 +88,21 @@
                                 <td>${review.reviewOrderId}</td>
                                 <td>${new Date(review.reviewDate).toLocaleString('zh-TW')}</td>
                                 <td><img src="/reviewimgs/${review.reviewImg}" alt="評論圖片" style="width:100px;"></td>
-                                <td class="col-3">
-	                                <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
+                                <td>
+                                    <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
                                 </td>
                                 <td>${review.revieweValuation}</td>
                                 <td>${review.reviewer}</td>
-                                <td>${review.reviewStatus === 1 ? '顯示' : '隱藏'}</td>
+                                <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
                                 <td>
-	                                <select class="form-select" aria-label="Default select example">
-	                                	<option selected>請選擇狀態</option>
-	  									<option value="1">顯示</option>
-	  									<option value="0">不顯示</option>
-	                                </select>
+                                    <select class="form-select review-status" data-id="${review.reviewId}">
+                                        <option value="1" ${review.reviewStatus === 1 ? 'selected' : ''}>顯示</option>
+                                        <option value="2" ${review.reviewStatus === 2 ? 'selected' : ''}>隱藏</option>
+                                    </select>
                                 </td>
-                                <td><button type="button" class="btn btn-outline-success">更新</button></td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button>
+                                </td>
                             </tr>
                         `);
                     });
@@ -85,7 +112,28 @@
                 }
             });
         }
-
+    
+        // 更新評論狀態
+        function updateReviewStatus(reviewId) {
+            const selectedStatus = $(`.review-status[data-id="${reviewId}"]`).val(); // 獲取選中的狀態
+            $.ajax({
+                url: '/review/updateStatus',
+                type: 'POST',
+                data: {
+                    id: reviewId,
+                    status: selectedStatus
+                },
+                success: function(response) {
+                    alert(response); // 顯示更新成功的訊息
+                    loadReviews(); // 重新載入評論列表
+                },
+                error: function(err) {
+                    console.error("Error updating review status:", err);
+                    alert("更新失敗，請稍後再試！");
+                }
+            });
+        }
+    
         // 初次載入評論
         $(document).ready(function() {
             loadReviews();

@@ -53,7 +53,7 @@ public class ReviewManagementController {
         if (updatedReview != null) {
             return ResponseEntity.ok("更新成功");
         } else {
-            return ResponseEntity.status(404).body("Review not found");
+            return ResponseEntity.status(404).body("找不到評論資料");
         }
     }
     
