@@ -37,7 +37,7 @@
                     <!-- 資料將通過 JavaScript 動態插入 -->
                 </tbody>
             </table>
-            
+
             <ul class="pagination">
                 <!-- 上一頁按鈕 -->
                 <th:block th:switch="${ page.number+1 == 1 }">
@@ -96,8 +96,9 @@
                                 <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
                                 <td>
                                     <select class="form-select review-status" data-id="${review.reviewId}">
-                                        <option value="1" ${review.reviewStatus === 1 ? 'selected' : ''}>顯示</option>
-                                        <option value="2" ${review.reviewStatus === 2 ? 'selected' : ''}>隱藏</option>
+                                        <option value="" disabled selected>請選擇狀態</option>
+                                        <option value="1" selected}>顯示</option>
+                                        <option value="0" selected}>隱藏</option>
                                     </select>
                                 </td>
                                 <td>
@@ -115,7 +116,13 @@
     
         // 更新評論狀態
         function updateReviewStatus(reviewId) {
-            const selectedStatus = $(`.review-status[data-id="${reviewId}"]`).val(); // 獲取選中的狀態
+            const selectedStatus = $(`.review-status[data-id="${reviewId}"]`).val();
+
+            if (selectedStatus === "") {
+                alert("請選擇有效的狀態！");
+                return;
+            }
+
             $.ajax({
                 url: '/review/updateStatus',
                 type: 'POST',
