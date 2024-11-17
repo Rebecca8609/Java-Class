@@ -154,8 +154,8 @@
 	                        <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
 	                        <td><select class="form-select review-status" data-id="${review.reviewId}">
 	                                <option value="" disabled selected>請選擇狀態</option>
-	                                <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
-	                                <option value="2" ${review.reviewStatus == 2 ? 'selected' : ''}>隱藏</option>
+	                                <option value="1">顯示</option>
+	                                <option value="2">隱藏</option>
 	                            </select>
 	                        </td>
 	                        <td><button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button></td>

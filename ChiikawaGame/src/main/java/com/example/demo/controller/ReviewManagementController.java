@@ -35,7 +35,7 @@ public class ReviewManagementController {
         return "review/reviewManagement";
     }
 
-    // 取得所有評論的分頁資料 
+    // 取得所有評論的分頁資料(後端是否能正常抓取)
     // http://localhost:8080/api/reviews?p=3
     // http://localhost:8080/api/reviews?p=2&status=0
     // http://localhost:8080/api/reviews?p=1&status=1&startDate=2023-01-01&endDate=2024-11-17
@@ -74,7 +74,9 @@ public class ReviewManagementController {
             return ResponseEntity.status(404).body("找不到評論資料");
         }
     }
-    //http://localhost:8080/review/upload
+    
+    //上傳評論網頁
+    //http://localhost:8080/review/addReview
 	@GetMapping("/review/addReview")
 	public String upload() {
 		return "review/reviewInput";
@@ -102,7 +104,7 @@ public class ReviewManagementController {
 	    return "review/reviewInput";
 	}
 
-    
+    //處理圖片顯示
 	//http://localhost:8080/review/downloadImg?p=31
 	@GetMapping("/review/downloadImg")
 	public ResponseEntity<byte[]> downloadImg(@RequestParam(name="p") Integer id) {
