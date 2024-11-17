@@ -82,7 +82,7 @@
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.js"></script>
 
     <script>
-    // 加載評論並分類
+    // 狀態選擇
     function selectTab(tab) {
         let reviewStatus = null; // 初始化篩選條件
         if (tab === 'visible') {
@@ -107,55 +107,67 @@
             $('#invisibleTab').addClass('active');
         }
     };
+    
+	// 搜尋日期範圍
+	function searchReview() {
+	    const dateRange = $('#myDatepicker').val(); // 獲取選擇的日期範圍
+	    const dates = dateRange.split(' - '); // 分割開始和結束日期
+	
+	    const startDate = dates[0] ? new Date(dates[0]).toISOString() : null;
+	    const endDate = dates[1] ? new Date(dates[1]).toISOString() : null;
+	
+	    loadReviews(1, null, startDate, endDate); // 重新加載評論資料，並傳遞日期範圍
+	}
 
-    // 加載評論並分類
-    function loadReviews(pageNumber = 1, reviewStatus = null) {
-        $.ajax({
-            url: `/api/reviews?p=${pageNumber}${reviewStatus !== null ? `&status=${reviewStatus}` : ''}`,
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                const reviews = data.content;
-                const tableBody = $('#rvwTableBody');
-                tableBody.empty(); // 清空表格內容
-
-                reviews.forEach(review => {
-                    const row = `
-                        <tr>
-                            <td>${review.reviewId}</td>
-                            <td>${review.reviewOrderId}</td>
-                            <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
-                            <td><img src="data:image/jpeg;base64,${review.base64Img}" alt="評論圖片" style="width:100px;"></td>
-                            <td>
-                                <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
-                            </td>
-                            <td>${review.revieweValuation}/5</td>
-                            <td>${review.reviewer}</td>
-                            <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
-                            <td>
-                                <select class="form-select review-status" data-id="${review.reviewId}">
-                                    <option value="" disabled selected>請選擇狀態</option>
-                                    <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
-                                    <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
-                                </select>
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button>
-                            </td>
-                        </tr>
-                    `;
-                    tableBody.append(row);
-                });
-
-                // 更新分頁按鈕
-                renderPagination(data.number + 1, data.totalPages, reviewStatus);
-            },
-            error: function (err) {
-                console.error("Error loading reviews:", err);
-            }
-        });
-    }
-
+	// 加載評論資料
+	function loadReviews(pageNumber = 1, reviewStatus = null, startDate = null, endDate = null) {
+	    let url = `/api/reviews?p=${pageNumber}`;
+	    if (reviewStatus !== null) {
+	        url += `&status=${reviewStatus}`;
+	    }
+	    if (startDate && endDate) {
+	        url += `&startDate=${startDate}&endDate=${endDate}`;
+	    }
+	
+	    $.ajax({
+	        url: url,
+	        type: 'GET',
+	        dataType: 'json',
+	        success: function (data) {
+	            const reviews = data.content;
+	            const tableBody = $('#rvwTableBody');
+	            tableBody.empty();
+	
+	            reviews.forEach(review => {
+	                const row = `
+	                    <tr>
+	                        <td>${review.reviewId}</td>
+	                        <td>${review.reviewOrderId}</td>
+	                        <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
+	                        <td><img src="data:image/jpeg;base64,${review.base64Img}" alt="評論圖片" style="width:100px;"></td>
+	                        <td><textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea></td>
+	                        <td>${review.revieweValuation}/5</td>
+	                        <td>${review.reviewer}</td>
+	                        <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
+	                        <td><select class="form-select review-status" data-id="${review.reviewId}">
+	                                <option value="" disabled selected>請選擇狀態</option>
+	                                <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
+	                                <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
+	                            </select>
+	                        </td>
+	                        <td><button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button></td>
+	                    </tr>
+	                `;
+	                tableBody.append(row);
+	            });
+	
+	            renderPagination(pageNumber, data.totalPages, reviewStatus, startDate, endDate); // 重渲染分頁
+	        },
+	        error: function (err) {
+	            console.error("Error loading reviews:", err);
+	        }
+	    });
+	}
     // 分頁按鈕渲染
     function renderPagination(currentPage, totalPages, reviewStatus) {
         const pagination = $('#pagination');
@@ -184,59 +196,63 @@
             pagination.append(`<li class="page-item disabled"><span class="page-link">下一頁</span></li>`);
         }
     }
+    
+    // 日期選擇器
+    const en = {
+        days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        daysMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+        months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        today: 'Today',
+        clear: 'Clear',
+        dateFormat: 'yyyy/MM/dd',
+        timeFormat: 'hh:mm aa',
+        firstDay: 0
+    }
 
+    const datepicker = new AirDatepicker('#myDatepicker', {
+        locale: en,
+        range: true,
+        multipleDatesSeparator: ' - '
+    });
 
-        // 日期選擇器
-        const en = {
-            days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-            daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-            daysMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-            months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-            monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            today: 'Today',
-            clear: 'Clear',
-            dateFormat: 'yyyy/MM/dd',
-            timeFormat: 'hh:mm aa',
-            firstDay: 0
+    // 更新評論狀態
+    function updateReviewStatus(reviewId) {
+        const selectedStatus = $(`.review-status[data-id="${reviewId}"]`).val();
+
+        if (selectedStatus === "") {
+            alert("請選擇有效的狀態！");
+            return;
         }
 
-        const datepicker = new AirDatepicker('#myDatepicker', {
-            locale: en,
-            range: true,
-            multipleDatesSeparator: ' - '
-        });
-
-        // 更新評論狀態
-        function updateReviewStatus(reviewId) {
-            const selectedStatus = $(`.review-status[data-id="${reviewId}"]`).val();
-
-            if (selectedStatus === "") {
-                alert("請選擇有效的狀態！");
-                return;
+        $.ajax({
+            url: '/review/updateStatus',
+            type: 'POST',
+            data: {
+                id: reviewId,
+                status: selectedStatus
+            },
+            success: function (response) {
+                alert(response); // 顯示更新成功的訊息
+                loadReviews(); // 重新載入評論列表
+            },
+            error: function (err) {
+                console.error("Error updating review status:", err);
+                alert("更新失敗，請稍後再試！");
             }
-
-            $.ajax({
-                url: '/review/updateStatus',
-                type: 'POST',
-                data: {
-                    id: reviewId,
-                    status: selectedStatus
-                },
-                success: function (response) {
-                    alert(response); // 顯示更新成功的訊息
-                    loadReviews(); // 重新載入評論列表
-                },
-                error: function (err) {
-                    console.error("Error updating review status:", err);
-                    alert("更新失敗，請稍後再試！");
-                }
-            });
-        }
-
-        // 預設加載全部評論
-        $(document).ready(function() {
-            selectTab('all');
         });
+    }
+
+    // 初始加載資料
+	 $(document).ready(function () {
+	     loadReviews(1); // 加載第一頁的所有評論
+	     $('#myDatepicker').datepicker({
+	         range: true,
+	         multipleDatesSeparator: ' - ',
+	         dateFormat: 'yyyy/mm/dd',
+	     });
+	 });
     </script>
 </body>
 

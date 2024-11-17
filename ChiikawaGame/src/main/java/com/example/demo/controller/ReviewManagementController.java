@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,13 +37,18 @@ public class ReviewManagementController {
         return "review/reviewManagement";
     }
 
-    // 取得所有評論的分頁資料 http://localhost:8080/api/reviews?p=2&status=1
+    // 取得所有評論的分頁資料 
+    // http://localhost:8080/api/reviews?p=3
+    // http://localhost:8080/api/reviews?p=2&status=0
+    // http://localhost:8080/api/reviews?p=1&status=1&startDate=2023-01-01&endDate=2024-11-17
     @GetMapping("/api/reviews")
     @ResponseBody
     public Page<Reviews> getReviews(
     		@RequestParam(name = "p", defaultValue = "1") Integer pageNumber,
-    		@RequestParam(name = "status", required = false) Integer reviewStatus) {
-        return rvwService.findReviewsByPageAndStatus(pageNumber, reviewStatus);
+    		@RequestParam(name = "status", required = false) Integer reviewStatus,
+    		@RequestParam(name = "startDate", required = false) String  startDate,
+            @RequestParam(name = "endDate", required = false) String  endDate) {
+        return rvwService.findReviewsByPageAndStatus(pageNumber, reviewStatus, startDate, endDate);
     }
 
 
