@@ -25,6 +25,7 @@ public class ReviewService {
 		return page != null ? page : Page.empty();  // 保證返回非空的 Page
 	}
 	
+	//用ID對應每筆資料
 	public Reviews findReviewById(Integer id) {
 		Optional<Reviews> op = reviewRepo.findById(id);
 		
@@ -34,6 +35,15 @@ public class ReviewService {
 		return null;
 	}
 	
+	//對應status的所有資料
+	public Page<Reviews> findReviewsByPageAndStatus(Integer pageNumber, Integer reviewStatus) {
+	    PageRequest pageRequest = PageRequest.of(pageNumber - 1, 5, Sort.Direction.DESC, "reviewDate");
+	    
+	    if (reviewStatus == null) {
+	        return reviewRepo.findAll(pageRequest); // 查詢全部
+	    }
+	    return reviewRepo.findByReviewStatus(reviewStatus, pageRequest); // 查詢特定狀態
+	}
 	
 	//修改評論的狀態
 	@Transactional

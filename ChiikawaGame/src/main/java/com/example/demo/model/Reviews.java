@@ -17,7 +17,7 @@ import jakarta.persistence.Table;
 public class Reviews {
 	
 	@Id @Column(name = "reviewId")
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy  = GenerationType.IDENTITY)
 	private int reviewId;
 	
 	@Column(name = "reviewImg")

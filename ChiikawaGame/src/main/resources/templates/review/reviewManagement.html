@@ -82,130 +82,109 @@
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.js"></script>
 
     <script>
-        // 加載評論
-        function loadReviews(pageNumber = 1, searchQuery = "") {
-            $.ajax({
-                url: `/api/reviews?p=${pageNumber}&searchQuery=${encodeURIComponent(searchQuery)}`,
-                type: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    const reviews = data.content; // 取得 Page 物件中的 content
-                    const tbody = $('#rvwTableBody');
-                    tbody.empty(); // 清空表格內容
-
-                    reviews.forEach(review => {
-                        tbody.append(`
-                            <tr th:each="review : ${reviews}">
-                                <td>${review.reviewId}</td>
-                                <td>${review.reviewOrderId}</td>
-                                <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
-                                <td><img th:src="@{'/review/download?id=' + ${review.id}}" alt="評論圖片" style="width:100px;"></td>
-                                <td>
-                                    <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
-                                </td>
-                                <td>${review.revieweValuation}/5</td>
-                                <td>${review.reviewer}</td>
-                                <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
-                                <td>
-                                    <select class="form-select review-status" data-id="${review.reviewId}">
-                                        <option value="" disabled selected>請選擇狀態</option>
-                                        <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
-                                        <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button>
-                                </td>
-                            </tr>
-                        `);
-                    });
-
-                    // 處理分頁按鈕顯示
-                    const totalPages = data.totalPages;
-                    const currentPage = data.number + 1;
-                    renderPagination(currentPage, totalPages);
-                },
-                error: function (err) {
-                    console.error("Error loading reviews:", err);
-                }
-            });
+    // 加載評論並分類
+    function selectTab(tab) {
+        let reviewStatus = null; // 初始化篩選條件
+        if (tab === 'visible') {
+            reviewStatus = 1; // 顯示中
+        } else if (tab === 'invisible') {
+            reviewStatus = 0; // 隱藏中
         }
 
-        function searchReview() {
-	    const searchQuery = $('#searchInput').val(); // 取得搜尋欄位的值
-	    $.ajax({
-	        url: `/api/searchReviews?keyword=${encodeURIComponent(searchQuery)}&p=1`,
-	        type: 'GET',
-	        dataType: 'json',
-	        success: function (data) {
-	            const reviews = data.content; // 獲取 Page 物件中的 content
-	            const tbody = $('#rvwTableBody');
-	            tbody.empty(); // 清空表格內容
-	
-	            reviews.forEach(review => {
-	                tbody.append(`
-	                    <tr>
-	                        <td>${review.reviewId}</td>
-	                        <td>${review.reviewOrderId}</td>
-	                        <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
-							<td><img src="data:image/jpeg;base64,${review.base64Img}" alt="評論圖片" style="width:100px;"></td>
-	                        <td>
-	                            <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
-	                        </td>
-	                        <td>${review.revieweValuation}/5</td>
-	                        <td>${review.reviewer}</td>
-	                        <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
-	                        <td>
-	                            <select class="form-select review-status" data-id="${review.reviewId}">
-	                                <option value="" disabled selected>請選擇狀態</option>
-	                                <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
-	                                <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
-	                            </select>
-	                        </td>
-	                        <td>
-	                            <button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button>
-	                        </td>
-	                    </tr>
-	                `);
-	            });
-	
-	            renderPagination(data.number + 1, data.totalPages); // 更新分頁
-	        },
-	        error: function (err) {
-	            console.error("Error searching reviews:", err);
-	        }
-	    });
-	}
+        loadReviews(1, reviewStatus); // 加載第一頁的篩選資料
+        updateTabUI(tab); // 更新標籤樣式
+        renderPagination(1, 10, reviewStatus); // 重設分頁顯示 (假設最大頁數為 10)
+    };
 
+    // 更新標籤樣式
+    function updateTabUI(selectedTab) {
+        $('.nav-link').removeClass('active');
+        if (selectedTab === 'all') {
+            $('#allTab').addClass('active');
+        } else if (selectedTab === 'visible') {
+            $('#visibleTab').addClass('active');
+        } else if (selectedTab === 'invisible') {
+            $('#invisibleTab').addClass('active');
+        }
+    };
 
-        // 分頁按鈕渲染
-        function renderPagination(currentPage, totalPages) {
-            const pagination = $('#pagination');
-            pagination.empty(); // 清空現有分頁按鈕
+    // 加載評論並分類
+    function loadReviews(pageNumber = 1, reviewStatus = null) {
+        $.ajax({
+            url: `/api/reviews?p=${pageNumber}${reviewStatus !== null ? `&status=${reviewStatus}` : ''}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                const reviews = data.content;
+                const tableBody = $('#rvwTableBody');
+                tableBody.empty(); // 清空表格內容
 
-            // 上一頁按鈕
-            if (currentPage > 1) {
-                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage - 1})">上一頁</a></li>`);
-            } else {
-                pagination.append(`<li class="page-item disabled"><span class="page-link">上一頁</span></li>`);
+                reviews.forEach(review => {
+                    const row = `
+                        <tr>
+                            <td>${review.reviewId}</td>
+                            <td>${review.reviewOrderId}</td>
+                            <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
+                            <td><img src="data:image/jpeg;base64,${review.base64Img}" alt="評論圖片" style="width:100px;"></td>
+                            <td>
+                                <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
+                            </td>
+                            <td>${review.revieweValuation}/5</td>
+                            <td>${review.reviewer}</td>
+                            <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
+                            <td>
+                                <select class="form-select review-status" data-id="${review.reviewId}">
+                                    <option value="" disabled selected>請選擇狀態</option>
+                                    <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
+                                    <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.append(row);
+                });
+
+                // 更新分頁按鈕
+                renderPagination(data.number + 1, data.totalPages, reviewStatus);
+            },
+            error: function (err) {
+                console.error("Error loading reviews:", err);
             }
+        });
+    }
 
-            // 頁碼按鈕
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === currentPage) {
-                    pagination.append(`<li class="page-item active"><span class="page-link">${i}</span></li>`);
-                } else {
-                    pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${i})">${i}</a></li>`);
-                }
-            }
+    // 分頁按鈕渲染
+    function renderPagination(currentPage, totalPages, reviewStatus) {
+        const pagination = $('#pagination');
+        pagination.empty(); // 清空現有分頁按鈕
 
-            // 下一頁按鈕
-            if (currentPage < totalPages) {
-                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage + 1})">下一頁</a></li>`);
+        // 上一頁按鈕
+        if (currentPage > 1) {
+            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage - 1}, ${reviewStatus}); return false;">上一頁</a></li>`);
+        } else {
+            pagination.append(`<li class="page-item disabled"><span class="page-link">上一頁</span></li>`);
+        }
+
+        // 頁碼按鈕
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pagination.append(`<li class="page-item active"><span class="page-link">${i}</span></li>`);
             } else {
-                pagination.append(`<li class="page-item disabled"><span class="page-link">下一頁</span></li>`);
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${i}, ${reviewStatus}); return false;">${i}</a></li>`);
             }
         }
+
+        // 下一頁按鈕
+        if (currentPage < totalPages) {
+            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage + 1}, ${reviewStatus}); return false;">下一頁</a></li>`);
+        } else {
+            pagination.append(`<li class="page-item disabled"><span class="page-link">下一頁</span></li>`);
+        }
+    }
+
 
         // 日期選擇器
         const en = {
@@ -254,9 +233,9 @@
             });
         }
 
-        // 初次載入評論
-        $(document).ready(function () {
-            loadReviews(); // 預設載入第一頁
+        // 預設加載全部評論
+        $(document).ready(function() {
+            selectTab('all');
         });
     </script>
 </body>

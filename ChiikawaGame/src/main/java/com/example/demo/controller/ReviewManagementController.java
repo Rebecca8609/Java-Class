@@ -36,11 +36,13 @@ public class ReviewManagementController {
         return "review/reviewManagement";
     }
 
-    // 取得所有評論的分頁資料 http://localhost:8080/api/reviews?p=1
+    // 取得所有評論的分頁資料 http://localhost:8080/api/reviews?p=2&status=1
     @GetMapping("/api/reviews")
     @ResponseBody
-    public Page<Reviews> getReviews(@RequestParam(name = "p", defaultValue = "1") Integer pageNumber) {
-        return rvwService.findReviewsByPage(pageNumber);
+    public Page<Reviews> getReviews(
+    		@RequestParam(name = "p", defaultValue = "1") Integer pageNumber,
+    		@RequestParam(name = "status", required = false) Integer reviewStatus) {
+        return rvwService.findReviewsByPageAndStatus(pageNumber, reviewStatus);
     }
 
 
