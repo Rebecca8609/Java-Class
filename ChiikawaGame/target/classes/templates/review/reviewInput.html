@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>評論總覽</title>
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div th:replace="~{layout/saHeader}"></div>
+    <div class="container mt-4">
+	
+	  <h2>上傳圖片</h2>
+      <div class="card">
+			<div class="card-header">請選擇圖片並上傳</div>
+			<div class="card-body">
+				<form th:action="@{/photos/uploadPost}" enctype="multipart/form-data" method="post">
+				圖片名稱: <input name="name" class="form-control" />				
+				檔案:  <input class="form-control" name="file" type="file" >				   
+				   <br>
+				    <div th:if="${okMsg}" th:text="${okMsg}"></div>
+				    <div th:if="${errorMsg}" th:text="${errorMsg}"></div>
+				   
+				   <button type="submit" class="btn btn-primary">送出</button>
+				</form>
+			</div>
+		</div>
+	
+	</div>
+	<!-- 正確引用 Bootstrap JavaScript -->
+	<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

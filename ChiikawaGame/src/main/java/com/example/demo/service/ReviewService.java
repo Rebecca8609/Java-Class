@@ -34,6 +34,7 @@ public class ReviewService {
 		return null;
 	}
 	
+	
 	//修改評論的狀態
 	@Transactional
 	public Reviews updateReviewStatusById(Integer id, Integer rvwStatus) {
@@ -46,5 +47,6 @@ public class ReviewService {
 		}
 		return null;
 	}
+
 	
 }

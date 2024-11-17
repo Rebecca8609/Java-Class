@@ -2,23 +2,57 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>評論總覽</title>
-<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>評論總覽</title>
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.css" rel="stylesheet">
+    <style>
+        /* 標籤欄 */
+        .nav-tabs .nav-link {
+            color: #252525;
+            font-weight: bold;
+            padding: 10px 15px;
+            border: none;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: #dc3545;
+            border-radius: 5px;
+        }
+
+        .tabs-container {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
+
 <body>
     <div th:replace="~{layout/saHeader}"></div>
     <div class="container mt-4">
-        <div class="mb-4">
-            <h2>查詢評論</h2>
-            <input type="text" id="searchInput" class="form-control"
-                   placeholder="輸入評論資料來查詢" onkeyup="searchReview()">
+        <h2>查詢列表</h2>
+        <div class="mb-4" style="display: flex; gap: 10px; align-items: center;">
+            <label for="searchInput" style="flex-shrink: 0;">搜尋評論:</label>
+            <input type="text" id="searchInput" class="form-control" style="flex-grow: 1;"
+                placeholder="可輸入評論ID、訂單編號、評論內容、評論者ID來查詢">
+            <label for="myDatepicker" style="flex-shrink: 0;">搜尋日期區間:</label>
+            <input class="form-control" id="myDatepicker" data-language='en' size="30" style="flex-grow: 1;">
+            <button class="btn btn-primary" onclick="searchReview()" style="flex-shrink: 0;flex-grow: 1;">搜尋</button>
         </div>
 
+        
         <div class="mb-4">
             <h2>評論列表</h2>
-            <!-- 垂直置中style="vertical-align: middle;" -->
+            <!-- 標籤欄 -->
+            <div class="tabs-container">
+                <ul class="nav nav-tabs" id="orderTabs">
+                    <li class="nav-item"><a class="nav-link active" id="allTab" href="#" onclick="selectTab('all')">全部</a></li>
+                    <li class="nav-item"><a class="nav-link" id="pendingPaymentTab" href="#" onclick="selectTab('visible')">顯示中</a></li>
+                    <li class="nav-item"><a class="nav-link" id="pendingShipmentTab" href="#" onclick="selectTab('invisible')">隱藏中</a></li>
+                </ul>
+            </div>
             <table id="rvwTable" class="table table-striped">
                 <thead>
                     <tr>
@@ -28,77 +62,55 @@
                         <th style="width:8%">商品圖片</th>
                         <th class="col-3">評論內容</th>
                         <th>評分</th>
-                        <th style="width:10%">評論者</th>
+                        <th style="width:10%">評論者ID</th>
                         <th>顯示狀態</th>
                         <th colspan="2">操作</th>
                     </tr>
                 </thead>
-                <tbody id="rvwTableBody" class="table table-striped">
+                <tbody id="rvwTableBody">
                     <!-- 資料將通過 JavaScript 動態插入 -->
                 </tbody>
             </table>
 
-            <ul class="pagination">
-                <!-- 上一頁按鈕 -->
-                <th:block th:switch="${ page.number+1 == 1 }">
-                    <li th:case="${false}" class="page-item">
-                        <a th:href="@{/review/reviewManagement(p=${page.number})}" class="page-link">上一頁</a>
-                    </li>
-                    <li th:case="${true}" class="page-item disabled"><span class="page-link">在第一頁</span></li>
-                </th:block>
-                <!-- 頁數按鈕 -->
-                <th:block th:each=" onePageNum : ${#numbers.sequence(1, page.totalPages)}">
-                    <th:block th:switch="${ onePageNum == page.number+1 }">
-                        <li th:case="${true}" class="page-item active">
-                            <span class="page-link">[[ ${onePageNum} ]]</span>
-                        </li>
-                        <li th:case="${false}" class="page-item">
-                            <a class="page-link" th:href="@{/review/reviewManagement(p=${onePageNum})}">[[ ${onePageNum} ]]</a>
-                        </li> 
-                    </th:block>
-                </th:block>
-                <!-- 下一頁按鈕 -->
-                <th:block th:switch="${ page.number+1 == page.totalPages }">
-                    <li th:case="${false}" class="page-item"><a th:href="@{/review/reviewManagement(p=${page.number + 2})}" class="page-link">下一頁</a></li>
-                    <li th:case="${true}" class="page-item disabled"><span class="page-link">在最後一頁</span></li>
-                </th:block>
-            </ul>
+            <!-- 分頁顯示 -->
+            <ul class="pagination" id="pagination"></ul>
         </div>
     </div>
 
     <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.js"></script>
 
     <script>
         // 加載評論
-        function loadReviews(pageNumber = 1) {
+        function loadReviews(pageNumber = 1, searchQuery = "") {
             $.ajax({
-                url: `/api/reviews?p=${pageNumber}`,
+                url: `/api/reviews?p=${pageNumber}&searchQuery=${encodeURIComponent(searchQuery)}`,
                 type: 'GET',
                 dataType: 'json',
-                success: function(data) {
+                success: function (data) {
                     const reviews = data.content; // 取得 Page 物件中的 content
                     const tbody = $('#rvwTableBody');
                     tbody.empty(); // 清空表格內容
-    
+
                     reviews.forEach(review => {
                         tbody.append(`
-                            <tr>
+                            <tr th:each="review : ${reviews}">
                                 <td>${review.reviewId}</td>
                                 <td>${review.reviewOrderId}</td>
-                                <td>${new Date(review.reviewDate).toLocaleString('zh-TW')}</td>
-                                <td><img src="/reviewimgs/${review.reviewImg}" alt="評論圖片" style="width:100px;"></td>
+                                <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
+                                <td><img th:src="@{'/review/download?id=' + ${review.id}}" alt="評論圖片" style="width:100px;"></td>
                                 <td>
                                     <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
                                 </td>
-                                <td>${review.revieweValuation}</td>
+                                <td>${review.revieweValuation}/5</td>
                                 <td>${review.reviewer}</td>
                                 <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
                                 <td>
                                     <select class="form-select review-status" data-id="${review.reviewId}">
                                         <option value="" disabled selected>請選擇狀態</option>
-                                        <option value="1" selected}>顯示</option>
-                                        <option value="0" selected}>隱藏</option>
+                                        <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
+                                        <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
                                     </select>
                                 </td>
                                 <td>
@@ -107,13 +119,114 @@
                             </tr>
                         `);
                     });
+
+                    // 處理分頁按鈕顯示
+                    const totalPages = data.totalPages;
+                    const currentPage = data.number + 1;
+                    renderPagination(currentPage, totalPages);
                 },
-                error: function(err) {
+                error: function (err) {
                     console.error("Error loading reviews:", err);
                 }
             });
         }
-    
+
+        function searchReview() {
+	    const searchQuery = $('#searchInput').val(); // 取得搜尋欄位的值
+	    $.ajax({
+	        url: `/api/searchReviews?keyword=${encodeURIComponent(searchQuery)}&p=1`,
+	        type: 'GET',
+	        dataType: 'json',
+	        success: function (data) {
+	            const reviews = data.content; // 獲取 Page 物件中的 content
+	            const tbody = $('#rvwTableBody');
+	            tbody.empty(); // 清空表格內容
+	
+	            reviews.forEach(review => {
+	                tbody.append(`
+	                    <tr>
+	                        <td>${review.reviewId}</td>
+	                        <td>${review.reviewOrderId}</td>
+	                        <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
+							<td><img src="data:image/jpeg;base64,${review.base64Img}" alt="評論圖片" style="width:100px;"></td>
+	                        <td>
+	                            <textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea>
+	                        </td>
+	                        <td>${review.revieweValuation}/5</td>
+	                        <td>${review.reviewer}</td>
+	                        <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
+	                        <td>
+	                            <select class="form-select review-status" data-id="${review.reviewId}">
+	                                <option value="" disabled selected>請選擇狀態</option>
+	                                <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
+	                                <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
+	                            </select>
+	                        </td>
+	                        <td>
+	                            <button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button>
+	                        </td>
+	                    </tr>
+	                `);
+	            });
+	
+	            renderPagination(data.number + 1, data.totalPages); // 更新分頁
+	        },
+	        error: function (err) {
+	            console.error("Error searching reviews:", err);
+	        }
+	    });
+	}
+
+
+        // 分頁按鈕渲染
+        function renderPagination(currentPage, totalPages) {
+            const pagination = $('#pagination');
+            pagination.empty(); // 清空現有分頁按鈕
+
+            // 上一頁按鈕
+            if (currentPage > 1) {
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage - 1})">上一頁</a></li>`);
+            } else {
+                pagination.append(`<li class="page-item disabled"><span class="page-link">上一頁</span></li>`);
+            }
+
+            // 頁碼按鈕
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage) {
+                    pagination.append(`<li class="page-item active"><span class="page-link">${i}</span></li>`);
+                } else {
+                    pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${i})">${i}</a></li>`);
+                }
+            }
+
+            // 下一頁按鈕
+            if (currentPage < totalPages) {
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage + 1})">下一頁</a></li>`);
+            } else {
+                pagination.append(`<li class="page-item disabled"><span class="page-link">下一頁</span></li>`);
+            }
+        }
+
+        // 日期選擇器
+        const en = {
+            days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            daysMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+            months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            today: 'Today',
+            clear: 'Clear',
+            dateFormat: 'yyyy/MM/dd',
+            timeFormat: 'hh:mm aa',
+            firstDay: 0
+        }
+
+        const datepicker = new AirDatepicker('#myDatepicker', {
+            locale: en,
+            range: true,
+            multipleDatesSeparator: ' - '
+        });
+
         // 更新評論狀態
         function updateReviewStatus(reviewId) {
             const selectedStatus = $(`.review-status[data-id="${reviewId}"]`).val();
@@ -130,21 +243,22 @@
                     id: reviewId,
                     status: selectedStatus
                 },
-                success: function(response) {
+                success: function (response) {
                     alert(response); // 顯示更新成功的訊息
                     loadReviews(); // 重新載入評論列表
                 },
-                error: function(err) {
+                error: function (err) {
                     console.error("Error updating review status:", err);
                     alert("更新失敗，請稍後再試！");
                 }
             });
         }
-    
+
         // 初次載入評論
-        $(document).ready(function() {
-            loadReviews();
+        $(document).ready(function () {
+            loadReviews(); // 預設載入第一頁
         });
     </script>
 </body>
+
 </html>
