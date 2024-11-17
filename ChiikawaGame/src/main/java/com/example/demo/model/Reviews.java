@@ -23,8 +23,8 @@ public class Reviews {
 	@Column(name = "reviewImg")
 	private byte[] reviewImg;
 	
-	@Column(name = "revieweValuation")
-	private int revieweValuation;
+	@Column(name = "reviewEvaluation")
+	private int reviewEvaluation;
 	
 	@Column(name = "reviewComment")
 	private String reviewComment;
@@ -85,12 +85,12 @@ public class Reviews {
 		this.reviewImg = reviewImg;
 	}
 
-	public int getRevieweValuation() {
-		return revieweValuation;
+	public int getReviewEvaluation() {
+		return reviewEvaluation;
 	}
 
-	public void setRevieweValuation(int revieweValuation) {
-		this.revieweValuation = revieweValuation;
+	public void setReviewEvaluation(int reviewEvaluation) {
+		this.reviewEvaluation = reviewEvaluation;
 	}
 
 	public String getReviewComment() {

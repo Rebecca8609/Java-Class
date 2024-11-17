@@ -79,6 +79,8 @@
 
     <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script
+  src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.js"></script>
 
     <script>
@@ -88,7 +90,7 @@
         if (tab === 'visible') {
             reviewStatus = 1; // 顯示中
         } else if (tab === 'invisible') {
-            reviewStatus = 0; // 隱藏中
+            reviewStatus = 2; // 隱藏中
         }
 
         loadReviews(1, reviewStatus); // 加載第一頁的篩選資料
@@ -139,20 +141,21 @@
 	            tableBody.empty();
 	
 	            reviews.forEach(review => {
+	                const imageUrl = `/review/downloadImg?p=${review.reviewId}`; // 構建圖片的 URL     
 	                const row = `
 	                    <tr>
 	                        <td>${review.reviewId}</td>
 	                        <td>${review.reviewOrderId}</td>
 	                        <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
-	                        <td><img src="data:image/jpeg;base64,${review.base64Img}" alt="評論圖片" style="width:100px;"></td>
+	                        <td><img src="${imageUrl}" alt="評論圖片" style="width:100px;"></td>
 	                        <td><textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea></td>
-	                        <td>${review.revieweValuation}/5</td>
+	                        <td>${review.reviewEvaluation}/5</td>
 	                        <td>${review.reviewer}</td>
 	                        <td>${review.reviewStatus == 1 ? '顯示' : '隱藏'}</td>
 	                        <td><select class="form-select review-status" data-id="${review.reviewId}">
 	                                <option value="" disabled selected>請選擇狀態</option>
 	                                <option value="1" ${review.reviewStatus == 1 ? 'selected' : ''}>顯示</option>
-	                                <option value="0" ${review.reviewStatus == 0 ? 'selected' : ''}>隱藏</option>
+	                                <option value="2" ${review.reviewStatus == 2 ? 'selected' : ''}>隱藏</option>
 	                            </select>
 	                        </td>
 	                        <td><button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button></td>
@@ -251,6 +254,7 @@
 	         range: true,
 	         multipleDatesSeparator: ' - ',
 	         dateFormat: 'yyyy/mm/dd',
+	         showButtonPanel: today
 	     });
 	 });
     </script>

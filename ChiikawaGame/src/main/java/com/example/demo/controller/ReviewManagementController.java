@@ -1,8 +1,6 @@
 package com.example.demo.controller;
 
 import java.io.IOException;
-import java.util.Base64;
-import java.util.Date;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,31 +75,42 @@ public class ReviewManagementController {
         }
     }
     //http://localhost:8080/review/upload
-	@GetMapping("/review/upload")
+	@GetMapping("/review/addReview")
 	public String upload() {
 		return "review/reviewInput";
 	}
 	
-	@PostMapping("/review/uploadPost")
-	public String uploadFilePost(@RequestParam MultipartFile file, Integer id, Model model) throws IOException {
-	    byte[] fileByte = file.getBytes();
+	@PostMapping("/review/addReviewPost")
+	public String addReviewPost(
+			@RequestParam MultipartFile reviewImg, 
+			int reviewEvaluation,
+			String reviewComment,
+			Integer reviewStatus,
+			Model model) throws IOException {
+		
+		reviewStatus=1;
+	    byte[] imgByte = reviewImg.getBytes();
 	    
-	    Reviews photo = new Reviews();
-	    photo.setReviewImg(fileByte);
-	    
-	    rvwRepo.save(photo);
-	    model.addAttribute("okMsg", "上傳OK!");
-	    
+	    Reviews img = new Reviews();
+	    img.setReviewImg(imgByte);
+	    img.setReviewEvaluation(reviewEvaluation);
+	    img.setReviewComment(reviewComment);
+	    img.setReviewStatus(reviewStatus);
+
+	    rvwRepo.save(img);
+
 	    return "review/reviewInput";
 	}
+
     
-	@GetMapping("/review/download")
-	public ResponseEntity<byte[]> downloadPhotos(@RequestParam Integer id) {
+	//http://localhost:8080/review/downloadImg?p=31
+	@GetMapping("/review/downloadImg")
+	public ResponseEntity<byte[]> downloadImg(@RequestParam(name="p") Integer id) {
 		Optional<Reviews> op = rvwRepo.findById(id);
 		
 		if(op.isPresent()) {
-			Reviews photos = op.get();
-			byte[] photoByte = photos.getReviewImg();
+			Reviews img = op.get();
+			byte[] photoByte = img.getReviewImg();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.IMAGE_JPEG);
 			return new ResponseEntity<byte[]>(photoByte, headers, HttpStatus.OK);
@@ -109,6 +118,4 @@ public class ReviewManagementController {
 		
 		return new ResponseEntity<byte[]>(HttpStatus.NOT_FOUND);
 	}
-
-   
 }
