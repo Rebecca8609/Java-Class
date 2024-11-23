@@ -47,8 +47,7 @@ public class ReviewManagementController {
     		@RequestParam(name = "startDate", required = false) String  startDate,
             @RequestParam(name = "endDate", required = false) String  endDate) {
         return rvwService.findReviewsByPageAndStatus(pageNumber, reviewStatus, startDate, endDate);
-    }
-
+    }  
 
     // 取得單一評論資料(給更新用)
     @GetMapping("/review/update")

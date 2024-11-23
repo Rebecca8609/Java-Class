@@ -77,11 +77,11 @@
         </div>
     </div>
 
-    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script
-  src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.js"></script>
+    
 
     <script>
     // 狀態選擇
@@ -99,16 +99,16 @@
     };
 
     // 更新標籤樣式
-    function updateTabUI(selectedTab) {
-        $('.nav-link').removeClass('active');
-        if (selectedTab === 'all') {
-            $('#allTab').addClass('active');
-        } else if (selectedTab === 'visible') {
-            $('#visibleTab').addClass('active');
-        } else if (selectedTab === 'invisible') {
-            $('#invisibleTab').addClass('active');
-        }
-    };
+	function updateTabUI(selectedTab) {
+	    $('.nav-link').removeClass('active');
+	    if (selectedTab === 'all') {
+	        $('#allTab').addClass('active');
+	    } else if (selectedTab === 'visible') {
+	        $('#pendingPaymentTab').addClass('active'); 
+	    } else if (selectedTab === 'invisible') {
+	        $('#pendingShipmentTab').addClass('active');
+	    }
+	};
     
 	// 搜尋日期範圍
 	function searchReview() {
@@ -172,13 +172,13 @@
 	    });
 	}
     // 分頁按鈕渲染
-    function renderPagination(currentPage, totalPages, reviewStatus) {
+    function renderPagination(currentPage, totalPages, reviewStatus, startDate, endDate) {
         const pagination = $('#pagination');
         pagination.empty(); // 清空現有分頁按鈕
 
         // 上一頁按鈕
         if (currentPage > 1) {
-            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage - 1}, ${reviewStatus}); return false;">上一頁</a></li>`);
+            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage - 1}, ${reviewStatus}, ${startDate}, ${endDate}); return false;">上一頁</a></li>`);
         } else {
             pagination.append(`<li class="page-item disabled"><span class="page-link">上一頁</span></li>`);
         }
@@ -188,13 +188,13 @@
             if (i === currentPage) {
                 pagination.append(`<li class="page-item active"><span class="page-link">${i}</span></li>`);
             } else {
-                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${i}, ${reviewStatus}); return false;">${i}</a></li>`);
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${i}, ${reviewStatus}, ${startDate}, ${endDate}); return false;">${i}</a></li>`);
             }
         }
 
         // 下一頁按鈕
         if (currentPage < totalPages) {
-            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage + 1}, ${reviewStatus}); return false;">下一頁</a></li>`);
+            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadReviews(${currentPage + 1}, ${reviewStatus}, ${startDate}, ${endDate}); return false;">下一頁</a></li>`);
         } else {
             pagination.append(`<li class="page-item disabled"><span class="page-link">下一頁</span></li>`);
         }
@@ -249,14 +249,22 @@
 
     // 初始加載資料
 	 $(document).ready(function () {
-	     loadReviews(1); // 加載第一頁的所有評論
-	     $('#myDatepicker').datepicker({
-	         range: true,
-	         multipleDatesSeparator: ' - ',
-	         dateFormat: 'yyyy/mm/dd',
-	         showButtonPanel: today
-	     });
-	 });
+	    // 取得今天的日期
+	    const today = new Date();
+	    // 格式化為 yyyy-MM-dd 格式
+	    const formattedToday = today.toISOString().split('T')[0]; // 例如：2024-11-18
+	
+	    // 加載第一頁的所有評論
+	    loadReviews(1);
+	
+	    // 初始化日期選擇器
+	    $('#myDatepicker').datepicker({
+	        range: true,
+	        multipleDatesSeparator: ' - ',
+	        dateFormat: 'yyyy/mm/dd'
+	    });
+	});
+
     </script>
 </body>
 

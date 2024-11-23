@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<title>文章論壇總覽</title>
+</head>
+<body>
+	<div th:replace="~{layout/saHeader}"></div>
+	<div class="container mt-4">
+		<h2>查詢列表</h2>
+		<div class="mb-4" style="display: flex; gap: 10px; align-items: center;">
+            <label for="searchInput" style="flex-shrink: 0;">搜尋文章:</label>
+            <input type="text" id="searchInput" class="form-control" style="flex-grow: 1;"
+                placeholder="可輸入文章ID、文章標題、文章內容、作者ID來查詢">
+            <label for="myDatepicker" style="flex-shrink: 0;">搜尋日期區間:</label>
+            <input class="form-control" id="myDatepicker" data-language='en' size="30" style="flex-grow: 1;">
+            <button class="btn btn-primary" onclick="searchReview()" style="flex-shrink: 0;flex-grow: 1;">搜尋</button>
+        </div>
+        
+			<div class="mb-4">
+            <h2>文章列表</h2>
+            <!-- 標籤欄 -->
+            <div class="tabs-container">
+                <ul class="nav nav-tabs" id="orderTabs">
+                    <li class="nav-item"><a class="nav-link active" id="allTab" href="#" onclick="selectTab('all')">全部</a></li>
+                    <li class="nav-item"><a class="nav-link" id="pendingPaymentTab" href="#" onclick="selectTab('visible')">顯示中</a></li>
+                    <li class="nav-item"><a class="nav-link" id="pendingShipmentTab" href="#" onclick="selectTab('invisible')">隱藏中</a></li>
+                </ul>
+            </div>
+            
+            <table id="faTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th style="width:10%">文章ID</th>
+                        <th style="width:10%">文章標題</th>
+                        <th style="width:8%">建立日期</th>
+                        <th style="width:8%">商品圖片</th>
+                        <th class="col-3">文章內容</th>
+                        <th style="width:10%">文章作者</th>
+                        <th>顯示狀態</th>
+                        <th colspan="2">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="faTableBody">
+                    <!-- 資料將通過 JavaScript 動態插入 -->
+                </tbody>
+            </table>
+
+            <!-- 分頁顯示 -->
+            <ul class="pagination" id="pagination"></ul>
+        </div>
+		
+		
+		
+	</div>
+	
+	<script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+	<script>
+        function renderPagination(page) {
+            const pagination = $('#pagination');
+            pagination.empty();
+            for (let i = 1; i <= page.totalPages; i++) {
+                const activeClass = page.number + 1 === i ? 'active' : '';
+                const btn = `<li class="page-item ${activeClass}">
+                                <a class="page-link" href="#" onclick="loadForumArticles(${i})">${i}</a>
+                            </li>`;
+                pagination.append(btn);
+            }
+        }
+        function loadForumArticles(pageNumber =1){
+            $.ajax({
+                url: `/forum/api/forumArticles?p=${pageNumber}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    const forumArticles = data.content;
+                    const tableBody = $('#faTableBody');
+                    tableBody.empty();
+                    forumArticles.forEach(forumArticle => {
+                        const row = `
+                            <tr>
+                                <td>${forumArticle.articleId}</td>
+                                <td>${forumArticle.articleTitle}</td>
+                                <td>${forumArticle.createdDate}</td>
+                                <td><img src="${forumArticle.requestItemPhoto}" alt="評論圖片" style="width:100px;"></td>
+                                <td><textarea class="form-control" style="height: 80px; resize: none;" readonly>${forumArticle.articleContent}</textarea></td>
+                                <td>${forumArticle.articleStatus == 1 ? '顯示' : '隱藏'}</td>
+                                <td><select class="form-select review-status" data-id="${forumArticle.articleId}">
+                                        <option value="" disabled selected>請選擇狀態</option>
+                                        <option value="1">顯示</option>
+                                        <option value="2">隱藏</option>
+                                    </select>
+                                </td>
+                                <td><button type="button" class="btn btn-outline-success" onclick="updateArticleStatus(${forumArticle.articleId})">更新</button></td>
+                            </tr>
+                        `;
+                        tableBody.append(row);
+                        renderPagination(data);
+                    })
+                },
+                error : function (xhr, status, error) {
+                console.error("無法加載資料：", error);
+                }
+            })
+        }
+
+	
+	
+	</script>
+</body>
+</html>
