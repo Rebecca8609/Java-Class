@@ -2,6 +2,8 @@ package com.example.demo.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,6 +34,7 @@ public class Reviews {
 	@Column(name = "reviewStatus")
 	private int reviewStatus;
 	
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone="GMT+8") // Restful API的時間格式
 	@Column(name = "reviewDate")
 	private Date reviewDate;
 	

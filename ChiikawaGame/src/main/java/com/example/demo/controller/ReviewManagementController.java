@@ -1,6 +1,10 @@
 package com.example.demo.controller;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +51,22 @@ public class ReviewManagementController {
     		@RequestParam(name = "startDate", required = false) String  startDate,
             @RequestParam(name = "endDate", required = false) String  endDate) {
         return rvwService.findReviewsByPageAndStatus(pageNumber, reviewStatus, startDate, endDate);
-    }  
+    }
+    
+    //http://localhost:8080/search?p=1
+    //http://localhost:8080/search?p=1&reviewId=20&reviewOrderId=20&reviewComment=20&beReviewed=20
+    //模糊搜尋(會先帶出全部的資料再根據搜尋顯示)
+    @ResponseBody
+    @GetMapping("/search")
+    public Page<Reviews> searchReviews(
+    	@RequestParam(name = "p", defaultValue = "1") Integer pageNumber,
+        @RequestParam(required = false) String reviewId,
+        @RequestParam(required = false) String reviewOrderId,
+        @RequestParam(required = false) String reviewComment,
+        @RequestParam(required = false) String beReviewed) {
+    	
+        return rvwService.searchReviews(pageNumber,reviewId, reviewOrderId, reviewComment, beReviewed);   
+    }
 
     // 取得單一評論資料(給更新用)
     @GetMapping("/review/update")
@@ -81,6 +100,7 @@ public class ReviewManagementController {
 		return "review/reviewInput";
 	}
 	
+	//上傳評論
 	@PostMapping("/review/addReviewPost")
 	public String addReviewPost(
 			@RequestParam MultipartFile reviewImg, 
