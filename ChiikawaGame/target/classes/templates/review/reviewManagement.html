@@ -101,14 +101,22 @@
         const dateRange = $('#myDatepicker').val();
         const dates = dateRange.split(' - ');
         
-        searchFilters.startDate = dates[0] ? new Date(dates[0]).toISOString().split('T')[0] : null;
-        searchFilters.endDate = dates[1] ? new Date(dates[1]).toISOString().split('T')[0] : null;
+        // 將日期轉換為 GMT+8 時間
+        searchFilters.startDate = dates[0] ? convertToGMT8(new Date(dates[0])) : null;
+        searchFilters.endDate = dates[1] ? convertToGMT8(new Date(dates[1])) : null;
 
         console.log("Start Date:", searchFilters.startDate);
         console.log("End Date:", searchFilters.endDate);
         
         loadReviews(1); // 加載第一頁資料
-    }  
+    }
+
+    // 將時間轉換為 GMT+8
+    function convertToGMT8(date) {
+        const localDate = new Date(date);
+        localDate.setHours(localDate.getHours() + 8);  // 增加 8 小時
+        return localDate.toISOString().split('T')[0];  // 只取日期部分
+    }
     
     // 日期選擇器
     const en = {
