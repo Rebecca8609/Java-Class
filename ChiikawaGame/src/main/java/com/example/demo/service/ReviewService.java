@@ -1,17 +1,14 @@
 package com.example.demo.service;
 
-import java.io.IOException;
-import java.text.ParseException;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,45 +37,6 @@ public class ReviewService {
 		}
 		return null;
 	}
-	
-	//對應status的所有資料
-	// 修改後的 findReviewsByPageAndStatus 方法
-	public Page<Reviews> findReviewsByPageAndStatus(Integer pageNumber, Integer reviewStatus, String startDate, String endDate) {
-	    // 分頁設置
-	    PageRequest pageRequest = PageRequest.of(pageNumber - 1, 5, Sort.Direction.DESC, "reviewDate");
-
-	    // 日期格式化
-	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-	    Date start = null;
-	    Date end = null;
-
-	    // 解析日期
-	    try {
-	        if (startDate != null && !startDate.isEmpty()) {
-	            start = sdf.parse(startDate);
-	        }
-	        if (endDate != null && !endDate.isEmpty()) {
-	            end = sdf.parse(endDate);
-	        }
-	    } catch (java.text.ParseException e) {
-	        e.printStackTrace();
-	        // 若日期格式錯誤，返回空的頁面資料
-	        return Page.empty();
-	    }
-
-	    // 根據條件返回不同的查詢結果
-	    if (reviewStatus == null && startDate == null && endDate == null) {
-	        return reviewRepo.findAll(pageRequest); // 查詢全部
-	    } else if (reviewStatus != null && startDate == null && endDate == null) {
-	        return reviewRepo.findByReviewStatus(reviewStatus, pageRequest); // 查詢特定狀態
-	    } else if (reviewStatus == null && startDate != null && endDate != null) {
-	        return reviewRepo.findByReviewDateBetween(start, end, pageRequest); // 查詢日期範圍
-	    } else {
-	        // 同時查詢 reviewStatus 和日期範圍
-	        return reviewRepo.findByReviewStatusAndReviewDateBetween(reviewStatus, start, end, pageRequest);
-	    }
-	   }
-
 
 	//修改評論的狀態
 	@Transactional
@@ -92,10 +50,32 @@ public class ReviewService {
 		}
 		return null;
 	}
-	
-	//模糊搜尋
-    public Page<Reviews> searchReviews(Integer pageNumber,String reviewId, String reviewOrderId, String reviewComment, String beReviewed) {
-    	PageRequest pageRequest = PageRequest.of(pageNumber - 1, 5, Sort.Direction.DESC, "reviewDate");
-        return reviewRepo.findByFilters(beReviewed,reviewId, reviewOrderId, reviewComment, pageRequest);
+    
+    //狀態+模糊搜尋+日期範圍搜尋
+    public Page<Reviews> searchReviewsWithDateRange(
+            Integer pageNumber, String reviewId, String reviewOrderId, String reviewComment, String reviewer, String reviewStatus,
+            String startDate, String endDate) {
+
+        PageRequest pageRequest = PageRequest.of(pageNumber - 1, 5, Sort.Direction.DESC, "reviewDate");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date start = null;
+        Date end = null;
+
+        try {
+            if (startDate != null && !startDate.isEmpty()) {
+                start = sdf.parse(startDate);
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                end = sdf.parse(endDate);
+            }
+        } catch (java.text.ParseException e) {
+            e.printStackTrace();
+            return Page.empty();
+        }
+
+        return reviewRepo.findByFiltersAndDateRange(reviewId, reviewOrderId, reviewComment, reviewer, reviewStatus, start, end, pageRequest);
     }
+
+
 }

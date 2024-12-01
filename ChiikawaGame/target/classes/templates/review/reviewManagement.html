@@ -35,15 +35,12 @@
         <h2>查詢列表</h2>
         <div class="mb-4" style="display: flex; gap: 10px; align-items: center;">
             <label for="searchInput" style="flex-shrink: 0;">搜尋評論:</label>
-            <input type="text" id="searchInput" class="form-control" style="flex-grow: 1;"
-                placeholder="可輸入評論ID、訂單編號、評論內容、評論者ID來查詢">
-            <button class="btn btn-primary" onclick="searchLike()" style="flex-shrink: 0;flex-grow: 1;">搜尋</button>
+            <input type="text" id="searchInput" class="form-control" style="flex-grow: 1;" placeholder="可輸入評論ID、訂單編號、評論內容、評論者ID來查詢">
             <label for="myDatepicker" style="flex-shrink: 0;">搜尋日期區間:</label>
             <input class="form-control" id="myDatepicker" data-language='en' size="30" style="flex-grow: 1;">
-            <button class="btn btn-primary" onclick="searchDate()" style="flex-shrink: 0;flex-grow: 1;">搜尋</button>
-            <button class="btn btn-danger" onclick="deleteInput()" style="flex-shrink: 0;flex-grow: 1;">清除</button>
+            <button class="btn btn-primary" onclick="search()" style="flex-shrink: 0; flex-grow: 1;">搜尋</button>
+            <button class="btn btn-danger" onclick="deleteInput()" style="flex-shrink: 0; flex-grow: 1;">清除</button>
         </div>
-
         
         <div class="mb-4">
             <h2>評論列表</h2>
@@ -51,8 +48,8 @@
             <div class="tabs-container">
                 <ul class="nav nav-tabs" id="orderTabs">
                     <li class="nav-item"><a class="nav-link active" id="allTab" href="#" onclick="selectTab('all')">全部</a></li>
-                    <li class="nav-item"><a class="nav-link" id="pendingPaymentTab" href="#" onclick="selectTab('visible')">顯示中</a></li>
-                    <li class="nav-item"><a class="nav-link" id="pendingShipmentTab" href="#" onclick="selectTab('invisible')">隱藏中</a></li>
+                    <li class="nav-item"><a class="nav-link" id="visibleTab" href="#" onclick="selectTab('visible')">顯示中</a></li>
+                    <li class="nav-item"><a class="nav-link" id="invisibleTab" href="#" onclick="selectTab('invisible')">隱藏中</a></li>
                 </ul>
             </div>
             <table id="rvwTable" class="table table-striped">
@@ -96,28 +93,6 @@
         searchInput: null
     };
     
-    // 搜尋日期範圍
-    function searchDate() {
-        const dateRange = $('#myDatepicker').val();
-        const dates = dateRange.split(' - ');
-        
-        // 將日期轉換為 GMT+8 時間
-        searchFilters.startDate = dates[0] ? convertToGMT8(new Date(dates[0])) : null;
-        searchFilters.endDate = dates[1] ? convertToGMT8(new Date(dates[1])) : null;
-
-        console.log("Start Date:", searchFilters.startDate);
-        console.log("End Date:", searchFilters.endDate);
-        
-        loadReviews(1); // 加載第一頁資料
-    }
-
-    // 將時間轉換為 GMT+8
-    function convertToGMT8(date) {
-        const localDate = new Date(date);
-        localDate.setHours(localDate.getHours() + 8);  // 增加 8 小時
-        return localDate.toISOString().split('T')[0];  // 只取日期部分
-    }
-    
     // 日期選擇器
     const en = {
         days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
@@ -131,41 +106,83 @@
         timeFormat: 'hh:mm aa',
         firstDay: 0
     }
-
+    
     const datepicker = new AirDatepicker('#myDatepicker', {
         locale: en,
         range: true,
         multipleDatesSeparator: ' - '
     });
-
-    // 模糊搜尋
-    function searchLike() {
+    
+    // 搜尋欄位方法
+    function search() {
+        // 獲取模糊搜尋輸入
         searchFilters.searchInput = $('#searchInput').val().trim();
 
-        console.log("Search Input:", searchFilters.searchInput); //檢查是否正確傳入參數
+        // 獲取日期範圍
+        const dateRange = $('#myDatepicker').val();
+        if (dateRange) {
+            const dates = dateRange.split(' - ');
+            searchFilters.startDate = dates[0] ? convertToGMT8(new Date(dates[0])) : null;
+            searchFilters.endDate = dates[1] ? convertToGMT8(new Date(dates[1])) : null;
+        } else {
+            searchFilters.startDate = null;
+            searchFilters.endDate = null;
+        }
 
-        loadReviews(1); // 加載第一頁資料
+        // 清空狀態以重新搜索
+        searchFilters.reviewStatus = null;
+
+        // 更新 Tab 樣式為 "全部"
+        updateTabUI('all'); // 確保全部標籤被選中
+
+        // 加載第一頁數據
+        loadReviews(1);
+
+    }
+
+    
+    // 將時間轉換為 GMT+8
+    function convertToGMT8(date) {
+        const localDate = new Date(date);
+        localDate.setHours(localDate.getHours() + 8);  // 增加 8 小時
+        return localDate.toISOString().split('T')[0];  // 只取日期部分
     }
 
     // 加載評論資料
     function loadReviews(pageNumber = 1) {
         const { reviewStatus, startDate, endDate, searchInput } = searchFilters;
-        
-        let url = `/api/reviews?p=${pageNumber}`;
-        if (reviewStatus !== null) url += `&status=${reviewStatus}`;
-        if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
-        if (searchInput) url = `/search?p=${pageNumber}&reviewId=${searchInput}&reviewOrderId=${searchInput}&reviewComment=${searchInput}&beReviewed=${searchInput}`;
 
-        console.log("API URL:", url); //檢查是否有抓到路徑
+        // 初始化基礎的 URL
+        let url = `/review/search?p=${pageNumber}`;
 
+        // 動態拼接篩選條件到 URL
+        if (reviewStatus !== null) {
+            url += `&reviewStatus=${reviewStatus}`;
+        }
+        if (startDate) {
+            url += `&startDate=${encodeURIComponent(startDate)}`;
+        }
+        if (endDate) {
+            url += `&endDate=${encodeURIComponent(endDate)}`;
+        }
+        if (searchInput) {
+            url += `&reviewId=${encodeURIComponent(searchInput)}`;
+            url += `&reviewOrderId=${encodeURIComponent(searchInput)}`;
+            url += `&reviewComment=${encodeURIComponent(searchInput)}`;
+            url += `&reviewer=${encodeURIComponent(searchInput)}`;
+        }
+
+        console.log("API URL:", url);
+
+        // 發送 AJAX 請求
         $.ajax({
             url: url,
             method: 'GET',
             dataType: 'json',
             success: function (data) {
                 const reviews = data.content;
-                renderTable(reviews); // 渲染表格
-                renderPagination(pageNumber, data.totalPages); // 更新分頁
+                renderTable(reviews);
+                renderPagination(pageNumber, data.totalPages);
             },
             error: function (err) {
                 console.error("Error loading reviews:", err);
@@ -207,30 +224,39 @@
 
     // 狀態選擇(更新用)
     function selectTab(tab) {
-    searchFilters.reviewStatus = tab === 'visible' ? 1 : tab === 'invisible' ? 2 : null;
-    searchFilters.searchInput = null; // 清空模糊搜尋條件
-    searchFilters.startDate = null;
-    searchFilters.endDate = null;
+        // 根據選擇的 Tab 更新 reviewStatus
+        searchFilters.reviewStatus = tab === 'visible' ? 1 : tab === 'invisible' ? 2 : null;
 
-    $('#searchInput').val(''); // 清空搜尋框
-    $('#myDatepicker').val(''); // 清空日期選擇
+        // 如果是重新點擊標籤時，需重置其他搜尋條件
+        if (tab === 'all') {
+            searchFilters.searchInput = null; // 清空模糊搜尋條件
+            searchFilters.startDate = null; // 清空日期範圍
+            searchFilters.endDate = null;
+            $('#searchInput').val(''); // 清空搜尋框
+            $('#myDatepicker').val(''); // 清空日期選擇器
+        }
 
-    loadReviews(1); // 加載資料
-    updateTabUI(tab); // 更新 Tab 樣式
+        // 加載第一頁的資料
+        loadReviews(1);
+
+        // 更新 Tab 樣式
+        updateTabUI(tab);
     }
 
+
     // 更新標籤樣式
-	function updateTabUI(selectedTab) {
-	    $('.nav-link').removeClass('active');
-	    if (selectedTab === 'all') {
-	        $('#allTab').addClass('active');
-	    } else if (selectedTab === 'visible') {
-	        $('#pendingPaymentTab').addClass('active'); 
-	    } else if (selectedTab === 'invisible') {
-	        $('#pendingShipmentTab').addClass('active');
-	    }
-	};
-        
+    function updateTabUI(selectedTab) {
+        $('.nav-link').removeClass('active'); // 清除所有標籤的活躍狀態
+
+        // 根據選中的標籤設置活躍狀態
+        if (selectedTab === 'all') {
+            $('#allTab').addClass('active');
+        } else if (selectedTab === 'visible') {
+            $('#visibleTab').addClass('active');
+        } else if (selectedTab === 'invisible') {
+            $('#invisibleTab').addClass('active');
+        }
+    };   
 
     // 分頁按鈕渲染
     function renderPagination(currentPage, totalPages) {
@@ -283,7 +309,7 @@
                 alert("更新失敗，請稍後再試！");
             }
         });
-    }
+    };
 
     // 清空輸入欄位的值並返回初始狀態
     function deleteInput() {
@@ -299,16 +325,15 @@
         $('#searchInput').val('');
         $('#myDatepicker').val('');
 
-        // 更新 UI 到 "全部" 標籤的樣式
+        // 重置到 "全部" 標籤
         updateTabUI('all');
 
         // 顯示提示訊息
-        alert("輸入欄位已清除，返回初始狀態！");
+        alert("輸入欄位已清除");
 
         // 加載初始狀態的評論列表
         loadReviews(1);
-    }
-
+    };
 
     // 初始加載資料
 	$(document).ready(function () {

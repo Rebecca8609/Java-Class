@@ -39,8 +39,6 @@ public class ForumArticles {
 	private int articleStatus;
 	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone="GMT+8") // Restful API的時間格式
-	@Temporal(TemporalType.TIMESTAMP)
-	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") // SpringMVC的時間格式。前端輸入輸出時的格式對應，若須強制轉換格式，el 須使用雙層大括號
 	@Column(name = "createdDate")
 	private Date createdDate;
 	

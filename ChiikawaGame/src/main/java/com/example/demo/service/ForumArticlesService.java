@@ -18,6 +18,6 @@ public class ForumArticlesService {
 	public Page<ForumArticles> findForumArticlesByPage(Integer pageNumber){
 		PageRequest pgr = PageRequest.of(pageNumber-1, 5,Sort.Direction.DESC ,"createdDate");
 		Page<ForumArticles> page = faRepo.findAll(pgr);
-		return page;
+		return page != null ? page : Page.empty();  // 保證返回非空的 Page
 	}
 }

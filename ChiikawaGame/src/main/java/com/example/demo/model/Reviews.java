@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 //import jakarta.persistence.JoinColumn;
 //import jakarta.persistence.ManyToOne;
 //import jakarta.persistence.OneToOne;
@@ -22,6 +23,7 @@ public class Reviews {
 	@GeneratedValue(strategy  = GenerationType.IDENTITY)
 	private int reviewId;
 	
+	@Lob
 	@Column(name = "reviewImg")
 	private byte[] reviewImg;
 	
@@ -34,7 +36,7 @@ public class Reviews {
 	@Column(name = "reviewStatus")
 	private int reviewStatus;
 	
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone="GMT+8") // Restful API的時間格式
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
 	@Column(name = "reviewDate")
 	private Date reviewDate;
 	

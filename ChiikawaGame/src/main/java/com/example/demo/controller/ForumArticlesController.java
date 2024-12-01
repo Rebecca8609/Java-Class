@@ -17,6 +17,7 @@ public class ForumArticlesController {
 	@Autowired
 	private ForumArticlesService faService;
 	
+	//　顯示文章頁面 http://localhost:8080/forum/forumArticlesManagement
 	@GetMapping("/forum/forumArticlesManagement")
 	public String forumArticleList(@RequestParam(name = "p", defaultValue = "1") Integer pageNumber,Model model) {
 		Page<ForumArticles> page = faService.findForumArticlesByPage(pageNumber);
