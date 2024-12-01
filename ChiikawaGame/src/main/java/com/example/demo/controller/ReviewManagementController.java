@@ -94,7 +94,7 @@ public class ReviewManagementController {
 	public String addReviewPost(@RequestParam MultipartFile[] reviewImg, int reviewEvaluation, String reviewComment,
 			Integer reviewStatus, @RequestParam(required = false) Optional<Integer> reviewOrderId, Model model)
 			throws IOException {
-
+		
 		// 限制最多只能上傳 5 張圖片
 		if (reviewImg.length > 5) {
 			System.out.println("上傳超過5張圖片");
@@ -116,7 +116,7 @@ public class ReviewManagementController {
 			photoList.add(img);
 		}
 		rvwRepo.saveAll(photoList);
-		model.addAttribute("message", "評論新增成功！");
+		model.addAttribute("message", "送出成功！");
 		return "review/reviewInput";
 		
 		//單一圖片上傳

@@ -31,6 +31,46 @@
         .star-rating .fa-star.hover {
             color: gold;
         }
+        #previewContainer {
+        margin-top: 10px;
+    }
+
+    #imagePreviewList {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    #imagePreviewList li {
+        position: relative;
+        display: inline-block;
+    }
+
+    #imagePreviewList img {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    #imagePreviewList .remove-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: red;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 18px;
+    }
     </style>
 </head>
 
@@ -38,6 +78,10 @@
     <div th:replace="~{layout/saHeader}"></div>
     <div class="container mt-4">
         <h2>評論訂單</h2>
+
+        <!-- 提示訊息 -->
+        <div th:if="${message}" th:text="${message}" id="alertMessage" style="display: none;"></div>
+
         <div class="card">
             <div class="card-header">請填寫評論</div>
             <div class="card-body">
@@ -46,7 +90,10 @@
                     <input type="text" name="reviewOrderId" class="form-control" placeholder="請輸入訂單編號(預計之後接上OrderId會用select選單)"/><br />
 
                     <label for="reviewImg" class="form-label">檔案</label>
-                    <input class="form-control" id="reviewImg" name="reviewImg" type="file"  multiple required/><br/>
+                    <input class="form-control" id="reviewImg" name="reviewImg" type="file" multiple onchange="validateFiles(this)" required />
+                    <div id="previewContainer">
+                        <ul id="imagePreviewList"></ul> <!-- 預覽圖片 -->
+                    </div>
 
                     <label for="revieweValuation" class="form-label">評價</label>
                     <!-- 星星評價 -->
@@ -115,15 +162,75 @@
 
         //上傳圖片限制X張
         function validateFiles(input) {
-        const maxFiles = 5;
-        const files = input.files;
+            const maxFiles = 5;
+            const files = input.files;
 
-        if (files.length > maxFiles) {
-            alert(`最多只能上傳 ${maxFiles} 張圖片！`);
-            // 清空選擇的文件
-            input.value = '';
-        }
-    }
+            if (files.length > maxFiles) {
+                alert(`最多只能上傳 ${maxFiles} 張圖片！`);
+                // 清空選擇的文件
+                input.value = '';
+            }
+        };
+
+        document.getElementById('reviewImg').addEventListener('change', function () {
+            let fileList = Array.from(this.files); // 取得初始的 FileList
+            const imagePreviewList = document.getElementById('imagePreviewList');
+            imagePreviewList.innerHTML = ''; // 清空之前的預覽圖片
+
+            // 渲染預覽圖片
+            fileList.forEach((file, index) => {
+                if (!file.type.startsWith('image/')) return; // 確保只處理圖片
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const listItem = document.createElement('li');
+                    const img = document.createElement('img');
+                    const removeBtn = document.createElement('button');
+
+                    img.src = event.target.result;
+                    img.alt = file.name;
+
+                    removeBtn.textContent = 'X';
+                    removeBtn.className = 'remove-btn';
+
+                    // 點擊刪除按鈕時
+                    removeBtn.addEventListener('click', function () {
+                        // 從 fileList 中移除該文件
+                        fileList = fileList.filter((_, fileIndex) => fileIndex !== index);
+
+                        // 更新 FileList 並重設文件輸入框
+                        updateFileInput(fileList);
+                        listItem.remove(); // 從預覽列表移除圖片
+                    });
+
+                    listItem.appendChild(img);
+                    listItem.appendChild(removeBtn);
+                    imagePreviewList.appendChild(listItem);
+                };
+
+                reader.readAsDataURL(file);
+            });
+
+            // 更新文件輸入框的方法
+            function updateFileInput(filesArray) {
+                const dataTransfer = new DataTransfer(); // 創建 DataTransfer 物件
+                filesArray.forEach(file => dataTransfer.items.add(file)); // 添加文件
+                document.getElementById('reviewImg').files = dataTransfer.files; // 更新輸入框
+            }
+
+            // 初始化更新輸入框
+            updateFileInput(fileList);
+        });
+
+        // 在頁面加載後檢查是否有訊息需要顯示
+        $(document).ready(function () {
+            // 檢查是否有提示訊息
+            const alertMessage = $('#alertMessage');
+            if (alertMessage.length && alertMessage.text().trim() !== '') {
+                alert(alertMessage.text()); // 彈出提示訊息
+            }
+        });
+
     </script>
 </body>
 
