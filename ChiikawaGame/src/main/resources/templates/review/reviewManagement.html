@@ -38,9 +38,11 @@
         <h2>查詢列表</h2>
         <div class="mb-4" style="display: flex; gap: 10px; align-items: center;">
             <label for="searchInput" style="flex-shrink: 0;">搜尋評論:</label>
-            <input type="text" id="searchInput" class="form-control" style="flex-grow: 1;" placeholder="可輸入評論ID、訂單編號、評論內容、評論者ID來查詢">
-            <label for="myDatepicker" style="flex-shrink: 0;">搜尋日期區間:</label>
-            <input class="form-control" id="myDatepicker" data-language='en' size="30" style="flex-grow: 1;">
+            <input type="text" id="searchInput" class="form-control" style="flex: 1 1 50%;" placeholder="可輸入評論ID、訂單編號、評論內容、評論者ID來查詢">
+            <label for="startDatepicker" style="flex-shrink: 0;">搜尋起始日期:</label>
+            <input class="form-control" id="startDatepicker" data-language='en' size="30" style="flex: 1 1 25%;">
+            <label for="endDatepicker" style="flex-shrink: 0;">結束日期:</label>
+            <input class="form-control" id="endDatepicker" data-language='en' size="30" style="flex: 1 1 25%;">
             <button class="btn btn-primary" onclick="search()" style="flex-shrink: 0; flex-grow: 1;">搜尋</button>
             <button class="btn btn-danger" onclick="deleteInput()" style="flex-shrink: 0; flex-grow: 1;">清除</button>
         </div>
@@ -83,7 +85,7 @@
 
     <!-- Modal 結構 -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-sm">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="imageModalLabel">評論圖片</h5>
@@ -115,6 +117,7 @@
     };
     
     // 日期選擇器
+    //https://pluscdev.com/tutorial-air-datepicker/
     const en = {
         days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
         daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
@@ -127,28 +130,57 @@
         timeFormat: 'hh:mm aa',
         firstDay: 0
     }
-    
-    const datepicker = new AirDatepicker('#myDatepicker', {
+
+    // 初始化日期選擇器
+    const startDatepicker = new AirDatepicker('#startDatepicker', {
         locale: en,
-        range: true,
-        multipleDatesSeparator: ' - '
+        dateFormat: 'yyyy/MM/dd',
+        autoClose: true,
+    });
+
+    const endDatepicker = new AirDatepicker('#endDatepicker', {
+        locale: en,
+        dateFormat: 'yyyy/MM/dd',
+        autoClose: true,
     });
     
     // 搜尋欄位方法
+    // function search() {
+    //     // 獲取模糊搜尋輸入
+    //     searchFilters.searchInput = $('#searchInput').val().trim();
+
+    //     // 獲取日期範圍
+    //     const dateRange = $('#myDatepicker').val();
+    //     if (dateRange) {
+    //         const dates = dateRange.split(' - ');
+    //         searchFilters.startDate = dates[0] ? convertToGMT8(new Date(dates[0])) : null;
+    //         searchFilters.endDate = dates[1] ? convertToGMT8(new Date(dates[1])) : null;
+    //     } else {
+    //         searchFilters.startDate = null;
+    //         searchFilters.endDate = null;
+    //     }
+
+    //     // 清空狀態以重新搜索
+    //     searchFilters.reviewStatus = null;
+
+    //     // 更新 Tab 樣式為 "全部"
+    //     updateTabUI('all'); // 確保全部標籤被選中
+
+    //     // 加載第一頁數據
+    //     loadReviews(1);
+    // }
+
+    // 搜尋方法更新
     function search() {
         // 獲取模糊搜尋輸入
         searchFilters.searchInput = $('#searchInput').val().trim();
 
-        // 獲取日期範圍
-        const dateRange = $('#myDatepicker').val();
-        if (dateRange) {
-            const dates = dateRange.split(' - ');
-            searchFilters.startDate = dates[0] ? convertToGMT8(new Date(dates[0])) : null;
-            searchFilters.endDate = dates[1] ? convertToGMT8(new Date(dates[1])) : null;
-        } else {
-            searchFilters.startDate = null;
-            searchFilters.endDate = null;
-        }
+        // 獲取起始日期和結束日期
+        const startDate = $('#startDatepicker').val();
+        const endDate = $('#endDatepicker').val();
+
+        searchFilters.startDate = startDate ? convertToGMT8(new Date(startDate)) : null;
+        searchFilters.endDate = endDate ? convertToGMT8(new Date(endDate)) : null;
 
         // 清空狀態以重新搜索
         searchFilters.reviewStatus = null;
@@ -158,7 +190,6 @@
 
         // 加載第一頁數據
         loadReviews(1);
-
     }
 
     
@@ -326,7 +357,9 @@
             searchFilters.startDate = null; // 清空日期範圍
             searchFilters.endDate = null;
             $('#searchInput').val(''); // 清空搜尋框
-            $('#myDatepicker').val(''); // 清空日期選擇器
+            $('#startDatepicker').val(''); // 清空日期選擇器
+            $('#endDatepicker').val('');
+
         }
 
         // 加載第一頁的資料
@@ -415,7 +448,8 @@
 
         // 清空輸入框和日期選擇器
         $('#searchInput').val('');
-        $('#myDatepicker').val('');
+        $('#startDatepicker').val('');
+        $('#endDatepicker').val('');
 
         // 重置到 "全部" 標籤
         updateTabUI('all');
