@@ -26,6 +26,9 @@
             border-bottom: 1px solid #ddd;
             margin-bottom: 20px;
         }
+        .remove-btn{
+            margin: 10px;
+        }
     </style>
 </head>
 
@@ -58,7 +61,7 @@
                         <th style="width:10%">評論ID</th>
                         <th style="width:10%">訂單編號</th>
                         <th style="width:8%">評論日期</th>
-                        <th style="width:8%">商品圖片</th>
+                        <th style="width:10%">商品圖片</th>
                         <th class="col-3">評論內容</th>
                         <th>評分</th>
                         <th style="width:10%">評論者ID</th>
@@ -75,6 +78,24 @@
             <ul class="pagination" id="pagination"></ul>
             <div id="search-results"></div>
             <ul class="pagination" id="pagination2"></ul>
+        </div>
+    </div>
+
+    <!-- Modal 結構 -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">評論圖片</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalImagesContainer">
+                    <!-- 圖片將在這裡動態加載 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -172,7 +193,7 @@
             url += `&reviewer=${encodeURIComponent(searchInput)}`;
         }
 
-        console.log("API URL:", url);
+        // console.log("API URL:", url); //檢查抓到的路徑
 
         // 發送 AJAX 請求
         $.ajax({
@@ -197,13 +218,12 @@
         tableBody.empty();
 
         reviews.forEach(review => {
-            const imageUrl = `/review/downloadImg?p=${review.reviewId}`;
             const row = `
                 <tr>
                     <td>${review.reviewId}</td>
                     <td>${review.reviewOrderId}</td>
                     <td>${new Date(review.reviewDate).toLocaleString('zh-TW', { hour12: false })}</td>
-                    <td><img src="${imageUrl}" alt="評論圖片" style="width:100px;"></td>
+                    <td><button class="btn btn-outline-secondary" onclick="showImageModal(${review.reviewId})">查看圖片</button></td>
                     <td><textarea class="form-control" style="height: 80px; resize: none;" readonly>${review.reviewComment}</textarea></td>
                     <td>${review.reviewEvaluation}/5</td>
                     <td>${review.reviewer}</td>
@@ -215,12 +235,85 @@
                             <option value="2">隱藏</option>
                         </select>
                     </td>
-                    <td><button type="button" class="btn btn-outline-success" onclick="updateReviewStatus(${review.reviewId})">更新</button></td>
+                    <td><button type="button" class="btn btn-success" onclick="updateReviewStatus(${review.reviewId})">更新</button></td>
                 </tr>
             `;
             tableBody.append(row);
         });
     }
+
+    // Modal中圖片的顯示
+    function showImageModal(reviewId) {
+        // 將 reviewId 存儲到 Modal 的 data-* 屬性中
+        $('#imageModal').data('reviewId', reviewId);
+
+        $.ajax({
+            url: `/review/getImagesByReviewId?p=${reviewId}`,
+            method: 'GET',
+            success: function(data) {
+                const modalImagesContainer = $('#modalImagesContainer');
+                modalImagesContainer.empty();
+
+                if (data.length > 0) {
+                    data.forEach(imageData => {
+                        const imageUrl = `data:image/jpeg;base64,${imageData.imageBase64}`;
+                        const imageElement = `<img src="${imageUrl}" class="img-fluid mb-3" alt="評論圖片" style="width:150px;">`;
+
+                        const removeBtn = $('<button></button>', {
+                            text: '刪除',
+                            class: 'remove-btn btn btn-danger',
+                            click: function() {
+                                deleteImage(imageData.reviewPhotoId); // 傳入圖片 ID
+                            }
+                        });
+
+                        const imageWithButton = $('<div></div>', { class: 'image-container' })
+                            .append(imageElement)
+                            .append(removeBtn);
+
+                        modalImagesContainer.append(imageWithButton);
+                    });
+                } else {
+                    modalImagesContainer.append('<p>沒有圖片</p>');
+                }
+
+                $('#imageModal').modal('show'); // 顯示 Modal
+            },
+            error: function() {
+                alert("無法載入圖片！");
+            }
+        });
+    }
+
+    // 刪除圖片請求
+    function deleteImage(reviewPhotoId) {
+        // 跳出確認刪除對話框
+        const confirmed = confirm("確定要刪除這張圖片嗎?");
+        if (!confirmed) {
+            return; // 如果用戶選擇取消，直接返回
+        }
+
+        // 發送刪除請求
+        $.ajax({
+            url: `/review/delete?id=${reviewPhotoId}`, // 根據圖片 ID 發送的刪除請求
+            method: 'GET',
+            success: function(response) {
+                // console.log('刪除圖片成功:', response);
+
+                // 重新刷新圖片 Modal 的內容
+                // 確保我們使用存儲在 modal 中的評論 ID
+                const reviewId = $('#imageModal').data('reviewId'); // 假設 Modal 的 data-* 屬性存有 reviewId
+                showImageModal(reviewId);
+
+                alert("圖片已成功刪除！");
+            },
+            error: function(error) {
+                // console.error('刪除圖片失敗:', error);
+                alert("刪除失敗，請稍後再試！");
+            }
+        });
+    }
+
 
     // 狀態選擇(更新用)
     function selectTab(tab) {
@@ -242,7 +335,6 @@
         // 更新 Tab 樣式
         updateTabUI(tab);
     }
-
 
     // 更新標籤樣式
     function updateTabUI(selectedTab) {

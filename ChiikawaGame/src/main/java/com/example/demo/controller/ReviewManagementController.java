@@ -2,6 +2,10 @@ package com.example.demo.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +18,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.demo.model.ReviewPhotos;
+import com.example.demo.model.ReviewPhotosRepository;
 import com.example.demo.model.ReviewRepository;
 import com.example.demo.model.Reviews;
 import com.example.demo.service.ReviewService;
@@ -27,6 +34,9 @@ public class ReviewManagementController {
 
 	@Autowired
 	private ReviewRepository rvwRepo;
+	
+	@Autowired
+	private ReviewPhotosRepository rvwPhotosRepo;
 
 	// 顯示評論頁面 http://localhost:8080/review/reviewManagement
 	@GetMapping("/review/reviewManagement")
@@ -89,11 +99,19 @@ public class ReviewManagementController {
 		return "review/reviewInput";
 	}
 
-	// 上傳評論
+	// 上傳評論+多圖片
 	@PostMapping("/review/addReviewPost")
 	public String addReviewPost(@RequestParam MultipartFile[] reviewImg, int reviewEvaluation, String reviewComment,
-			Integer reviewStatus, @RequestParam(required = false) Optional<Integer> reviewOrderId, Model model)
+			Integer reviewStatus, @RequestParam int reviewOrderId, Model model,RedirectAttributes redirectAttributes)
 			throws IOException {
+		
+		Reviews reviews = new Reviews();
+		reviewStatus = 1; //評論直接設定狀態1
+		
+		reviews.setReviewEvaluation(reviewEvaluation);
+		reviews.setReviewComment(reviewComment);
+		reviews.setReviewStatus(reviewStatus);
+		reviews.setReviewOrderId(reviewOrderId);
 		
 		// 限制最多只能上傳 5 張圖片
 		if (reviewImg.length > 5) {
@@ -101,51 +119,70 @@ public class ReviewManagementController {
 			return "review/reviewInput"; // 重新返回輸入頁面
 		}
 
-		reviewStatus = 1;
-		int orderId = reviewOrderId.orElse(0); // 預設為 0
-
 		//多圖片上傳
-		ArrayList<Reviews> photoList = new ArrayList<>();
+		List<ReviewPhotos> photoList = new ArrayList<>();
 		for (MultipartFile onefile : reviewImg) {
-			Reviews img = new Reviews();
-			img.setReviewImg(onefile.getBytes());
-			img.setReviewEvaluation(reviewEvaluation);
-			img.setReviewComment(reviewComment);
-			img.setReviewStatus(reviewStatus);
-			img.setReviewOrderId(orderId);
-			photoList.add(img);
+			ReviewPhotos reviewPhotos = new ReviewPhotos();
+			reviewPhotos.setReviewImg(onefile.getBytes());
+			reviewPhotos.setReviews(reviews);
+			photoList.add(reviewPhotos);
 		}
-		rvwRepo.saveAll(photoList);
+		
+		reviews.setReviewPhotos(photoList);
+		rvwRepo.save(reviews);
+		
 		model.addAttribute("message", "送出成功！");
 		return "review/reviewInput";
-		
-		//單一圖片上傳
-//	    byte[] imgByte = reviewImg.getBytes();
-//	    img.setReviewImg(imgByte);
-//	    img.setReviewEvaluation(reviewEvaluation);
-//	    img.setReviewComment(reviewComment);
-//	    img.setReviewStatus(reviewStatus);
-//	    img.setReviewOrderId(reviewOrderId);
-//	    
-//	    rvwRepo.save(img);
+	}
+	
+	//處理對應reviewId的所有圖片請求
+	//http://localhost:8080/review/getImagesByReviewId?p=35
+	@GetMapping("/review/getImagesByReviewId")
+	@ResponseBody
+	public List<Map<String, Object>> getImagesByReviewId(@RequestParam(name = "p") Integer reviewId) {
+	    List<ReviewPhotos> photos = rvwPhotosRepo.findByReviewsReviewId(reviewId); // 根據 reviewId 查找所有圖片
+	    List<Map<String, Object>> imageDataList = new ArrayList<>();
+
+	    for (ReviewPhotos photo : photos) {
+	        // 將圖片轉換為 base64 編碼格式
+	        String base64Image = Base64.getEncoder().encodeToString(photo.getReviewImg());
+
+	        // 創建一個包含 base64 和 id 的 map
+	        Map<String, Object> imageData = new HashMap<>();
+	        imageData.put("imageBase64", base64Image);
+	        imageData.put("reviewPhotoId", photo.getReviewPhotoId());
+	        imageDataList.add(imageData);
+	    }
+	    return imageDataList; // 返回包含圖片 base64 編碼和 id 的對象列表
+	}
+
+	//處理刪除圖片
+	@GetMapping("/review/delete")
+	@ResponseBody
+	public String deletePhotos(@RequestParam Integer id) {
+	    try {
+	        rvwService.deletePhototById(id); // 刪除圖片
+	        return "success"; // 返回成功狀態
+	    } catch (Exception e) {
+	        return "error"; // 返回錯誤狀態
+	    }
+	}
+
+	// 處理圖片顯示(目前沒用到)
+	// http://localhost:8080/review/downloadImg?p=1
+//	@GetMapping("/review/downloadImg")
+//	public ResponseEntity<byte[]> downloadImg(@RequestParam(name = "p") Integer id) {
+//		Optional<ReviewPhotos> op = rvwPhotosRepo.findById(id);
 //
-//	    return "review/reviewInput";
-	}
-
-	// 處理圖片顯示
-	// http://localhost:8080/review/downloadImg?p=31
-	@GetMapping("/review/downloadImg")
-	public ResponseEntity<byte[]> downloadImg(@RequestParam(name = "p") Integer id) {
-		Optional<Reviews> op = rvwRepo.findById(id);
-
-		if (op.isPresent()) {
-			Reviews img = op.get();
-			byte[] photoByte = img.getReviewImg();
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.IMAGE_JPEG);
-			return new ResponseEntity<byte[]>(photoByte, headers, HttpStatus.OK);
-		}
-
-		return new ResponseEntity<byte[]>(HttpStatus.NOT_FOUND);
-	}
+//		if (op.isPresent()) {
+//			ReviewPhotos reviewPhotos = op.get();
+//			byte[] photoByte = reviewPhotos.getReviewImg();
+//			HttpHeaders headers = new HttpHeaders();
+//			headers.setContentType(MediaType.IMAGE_JPEG);
+//			return new ResponseEntity<byte[]>(photoByte, headers, HttpStatus.OK);
+//		}
+//
+//		return new ResponseEntity<byte[]>(HttpStatus.NOT_FOUND);
+//	}
+	
 }

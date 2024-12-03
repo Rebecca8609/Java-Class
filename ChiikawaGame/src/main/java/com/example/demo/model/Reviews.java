@@ -1,15 +1,20 @@
 package com.example.demo.model;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import jakarta.persistence.OneToMany;
 //import jakarta.persistence.JoinColumn;
 //import jakarta.persistence.ManyToOne;
 //import jakarta.persistence.OneToOne;
@@ -22,10 +27,6 @@ public class Reviews {
 	@Id @Column(name = "reviewId")
 	@GeneratedValue(strategy  = GenerationType.IDENTITY)
 	private int reviewId;
-	
-	@Lob
-	@Column(name = "reviewImg")
-	private byte[] reviewImg;
 	
 	@Column(name = "reviewEvaluation")
 	private int reviewEvaluation;
@@ -64,6 +65,10 @@ public class Reviews {
 //	@OneToOne
 //	private Orders buyerId;
 	
+	@JsonIgnore
+	@OneToMany(cascade = CascadeType.ALL,mappedBy = "reviews")
+	private List<ReviewPhotos> reviewPhotos = new ArrayList<>();
+	
 	@PrePersist // 當物件要轉換成 Persistent 狀態以前，執行這個方法
 	public void onCreate() {
 		if (reviewDate == null) {
@@ -80,14 +85,6 @@ public class Reviews {
 
 	public void setReviewId(int reviewId) {
 		this.reviewId = reviewId;
-	}
-
-	public byte[] getReviewImg() {
-		return reviewImg;
-	}
-
-	public void setReviewImg(byte[] reviewImg) {
-		this.reviewImg = reviewImg;
 	}
 
 	public int getReviewEvaluation() {
@@ -145,7 +142,14 @@ public class Reviews {
 	public void setReviewer(int reviewer) {
 		this.reviewer = reviewer;
 	}
-	
+
+	public List<ReviewPhotos> getReviewPhotos() {
+		return reviewPhotos;
+	}
+
+	public void setReviewPhotos(List<ReviewPhotos> reviewPhotos) {
+		this.reviewPhotos = reviewPhotos;
+	}
 	
 	
 }

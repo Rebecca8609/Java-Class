@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.model.Reviews;
+import com.example.demo.model.ReviewPhotosRepository;
 import com.example.demo.model.ReviewRepository;
 
 @Service
@@ -20,6 +21,9 @@ public class ReviewService {
 	
 	@Autowired
 	private ReviewRepository reviewRepo;
+	
+	@Autowired
+	private ReviewPhotosRepository reviewPhotosRepo;
 	
 	//所有資料分頁Page
 	public Page<Reviews> findReviewsByPage(Integer pageNumber){
@@ -76,6 +80,10 @@ public class ReviewService {
 
         return reviewRepo.findByFiltersAndDateRange(reviewId, reviewOrderId, reviewComment, reviewer, reviewStatus, start, end, pageRequest);
     }
-
+    
+    //刪除圖片
+	public void deletePhototById(Integer id) {
+		reviewPhotosRepo.deleteById(id);
+	}
 
 }
