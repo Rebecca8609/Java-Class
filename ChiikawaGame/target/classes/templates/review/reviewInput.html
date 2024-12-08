@@ -86,9 +86,11 @@
             <div class="card-header">請填寫評論</div>
             <div class="card-body">
                 <form th:action="@{/review/addReviewPost}" enctype="multipart/form-data" method="post">
-                    <label for="" class="form-label">訂單編號</label>
-                    <input type="text" name="reviewOrderId" class="form-control" placeholder="請輸入訂單編號(預計之後接上OrderId會用select選單)"/><br />
-
+                    <label for="reviewOrderId" class="form-label">訂單編號</label>
+                    <!-- 動態生成的下拉式選單 -->
+                    <select id="reviewOrderId" name="reviewOrderId" class="form-control" required>
+                        <option value="" disabled selected>請選擇訂單編號</option>
+                    </select>
                     <label for="reviewImg" class="form-label">檔案</label>
                     <input class="form-control" id="reviewImg" name="reviewImg" type="file" multiple onchange="validateFiles(this)" required />
                     <div id="previewContainer">

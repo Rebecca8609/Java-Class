@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ReviewRepository extends JpaRepository<Reviews, Integer> {
 
+	//用ReviewStatus找出評論
 	Page<Reviews> findByReviewStatus(Integer reviewStatus, Pageable pageable);
     
     //模糊搜尋+日期範圍查詢+狀態
@@ -35,6 +36,10 @@ public interface ReviewRepository extends JpaRepository<Reviews, Integer> {
         @Param("endDate") Date endDate,
         Pageable pageable);
 
-
+    //用BeReviewed和ReviewEvaluation找出出評論
+    @Query(value = "SELECT * FROM reviews r WHERE r.beReviewed = :beReviewed AND (:reviewEvaluation IS NULL OR r.reviewEvaluation = :reviewEvaluation)", nativeQuery = true)
+    Page<Reviews> findByBeReviewedAndReviewEvaluation(@Param("beReviewed") Integer beReviewed, 
+    	    @Param("reviewEvaluation") Integer reviewEvaluation, 
+    	    Pageable pageable);
 
 }

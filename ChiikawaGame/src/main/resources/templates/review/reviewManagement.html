@@ -394,7 +394,18 @@
             pagination.append(`<li class="page-item disabled"><span class="page-link">上一頁</span></li>`);
         }
 
-        for (let i = 1; i <= totalPages; i++) {
+        // 計算顯示範圍
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+        // 調整 startPage 以避免超出範圍
+        if (endPage - startPage < maxPagesToShow - 1) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+
+        // 顯示分頁按鈕
+        for (let i = startPage; i <= endPage; i++) {
             if (i === currentPage) {
                 pagination.append(`<li class="page-item active"><span class="page-link">${i}</span></li>`);
             } else {

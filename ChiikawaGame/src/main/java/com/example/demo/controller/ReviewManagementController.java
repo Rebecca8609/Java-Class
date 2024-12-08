@@ -38,7 +38,7 @@ public class ReviewManagementController {
 	@Autowired
 	private ReviewPhotosRepository rvwPhotosRepo;
 
-	// 顯示評論頁面 http://localhost:8080/review/reviewManagement
+	// 顯示後台評論頁面 http://localhost:8080/review/reviewManagement
 	@GetMapping("/review/reviewManagement")
 	public String rvwList(@RequestParam(name = "p", defaultValue = "1") Integer pageNumber, Model model) {
 		Page<Reviews> page = rvwService.findReviewsByPage(pageNumber);
@@ -92,14 +92,13 @@ public class ReviewManagementController {
 		}
 	}
 
-	// 上傳評論網頁
-	// http://localhost:8080/review/addReview
+	// 顯示前台上傳評論網頁 http://localhost:8080/review/addReview
 	@GetMapping("/review/addReview")
 	public String upload() {
 		return "review/reviewInput";
 	}
 
-	// 上傳評論+多圖片
+	// 前台上傳評論+多圖片
 	@PostMapping("/review/addReviewPost")
 	public String addReviewPost(@RequestParam MultipartFile[] reviewImg, int reviewEvaluation, String reviewComment,
 			Integer reviewStatus, @RequestParam int reviewOrderId, Model model,RedirectAttributes redirectAttributes)
@@ -184,5 +183,30 @@ public class ReviewManagementController {
 //
 //		return new ResponseEntity<byte[]>(HttpStatus.NOT_FOUND);
 //	}
+	
+	// 顯示前台賣場評價頁面 http://localhost:8080/review/reviewSeller
+	@GetMapping("/review/reviewSeller")
+	public String reviewSeller() {
+	    return "review/reviewSeller";
+	}
+	
+	// 利用beReviewed被評論者(賣家)找到該評論內容
+	// http://localhost:8080/review/reviewPage?p=1&beReviewed=19910101
+	@GetMapping("/review/reviewPage")
+	@ResponseBody
+	public Page<Reviews> rvwList(
+	    @RequestParam(name = "p", defaultValue = "1") Integer pageNumber,
+	    @RequestParam(name = "beReviewed") Integer beReviewed,
+	    @RequestParam(name = "reviewEvaluation", required = false) Integer reviewEvaluation
+	) {
+	    return rvwService.findReviewByBeReviewedAndEvaluation(beReviewed, reviewEvaluation, pageNumber);
+	}
+	
+	//顯示ECPay的網頁 http://localhost:8080/showECPay
+	@GetMapping("/showECPay")
+	public String showECPay() {
+	    return "ecpay/ecpayTest";
+	}
+        
 	
 }

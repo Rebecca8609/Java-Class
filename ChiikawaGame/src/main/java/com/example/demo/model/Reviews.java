@@ -46,8 +46,16 @@ public class Reviews {
 	private int reviewOrderId;
 	
 //	@JoinColumn(name = "reviewOrderId")
-//	@OneToOne
+//	@OneToMany
 //	private Orders orderId;
+	
+	//要對接訂單Orders producId
+	@Column(name = "fk_product_id")
+	private int reviewProducId;
+	
+//	@JoinColumn(name = "reviewOrderId")
+//	@OneToOne
+//	private Orders producId;
 	
 	//要對接Orders sellerId
 	@Column(name = "beReviewed")

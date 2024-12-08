@@ -85,5 +85,10 @@ public class ReviewService {
 	public void deletePhototById(Integer id) {
 		reviewPhotosRepo.deleteById(id);
 	}
-
+	
+	//利用beReviewed(被評論者)來找尋評論
+	public Page<Reviews> findReviewByBeReviewedAndEvaluation(int beReviewed, Integer reviewEvaluation, Integer pageNumber) {
+	    PageRequest pgr = PageRequest.of(pageNumber - 1, 5, Sort.Direction.DESC, "reviewDate");
+	    return reviewRepo.findByBeReviewedAndReviewEvaluation(beReviewed, reviewEvaluation, pgr);
+	}
 }
