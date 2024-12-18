@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<title>文章論壇總覽</title>
+</head>
+<body>
+	<div th:replace="~{layout/saHeader}"></div>
+	<div class="container mt-4">
+        
+		<h2>查詢列表</h2>
+        <div class="mb-4 d-flex align-items-center justify-content-center gap-3">
+            <div class="input-group mb-0" style="flex: 2;">
+                <!-- Dropdown -->
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    選擇搜尋項目
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="#" onclick="updateSearchLabel('發文者ID')">發文者ID</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="updateSearchLabel('文章標題')">文章標題</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="updateSearchLabel('文章ID')">文章ID</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="updateSearchLabel('文章內容')">文章內容</a></li>
+                </ul>
+            
+                <!-- Input Field -->
+                <input type="text" id="searchInput" class="form-control" placeholder="輸入搜尋條件" aria-label="Text input with dropdown button">
+            </div>
+            
+            <!-- Start date -->
+            <div class="d-flex align-items-center" style="flex: 1;">
+                <label for="startDatepicker" class="me-2 mb-0">搜尋起始日期:</label>
+                <input class="form-control" id="startDatepicker" data-language='en'>
+            </div>
+        
+            <!-- End date -->
+            <div class="d-flex align-items-center" style="flex: 1;">
+                <label for="endDatepicker" class="me-2 mb-0">結束日期:</label>
+                <input class="form-control" id="endDatepicker" data-language='en'>
+            </div>
+        
+            <!-- Buttons -->
+            <div class="d-flex gap-2" style="flex: 1;">
+                <button class="btn btn-primary" onclick="search()">搜尋</button>
+                <button class="btn btn-danger" onclick="deleteInput()">清除</button>
+            </div>
+        </div>        
+        
+			<div class="mb-4">
+            <h2>文章列表</h2>
+            <!-- 標籤欄 -->
+            <div class="tabs-container">
+                <ul class="nav nav-tabs" id="orderTabs">
+                    <li class="nav-item"><a class="nav-link active" id="allTab" href="#" onclick="selectTab('all')">全部</a></li>
+                    <li class="nav-item"><a class="nav-link" id="pendingPaymentTab" href="#" onclick="selectTab('visible')">顯示中</a></li>
+                    <li class="nav-item"><a class="nav-link" id="pendingShipmentTab" href="#" onclick="selectTab('invisible')">隱藏中</a></li>
+                </ul>
+            </div>
+            
+            <table id="faTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th style="width:10%">文章ID</th>
+                        <th style="width:10%">文章標題</th>
+                        <th style="width:8%">建立日期</th>
+                        <th style="width:8%">商品圖片</th>
+                        <th class="col-3">文章內容</th>
+                        <th style="width:10%">文章作者</th>
+                        <th>顯示狀態</th>
+                        <th colspan="2">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="faTableBody">
+                    <!-- 資料將通過 JavaScript 動態插入 -->
+                </tbody>
+            </table>
+
+            <!-- 分頁顯示 -->
+            <ul class="pagination" id="pagination"></ul>
+            <div id="search-results"></div>
+        </div>	
+	</div>
+	
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.5/air-datepicker.min.js"></script>
+
+	<script>
+    // 更新輸入框的標籤
+    function updateSearchLabel(selectedItem) {
+        const inputField = document.getElementById("searchInput");
+        inputField.placeholder = `請輸入${selectedItem}`;
+        const dropdownButton = document.getElementById("dropdownMenuButton");
+        dropdownButton.textContent = selectedItem;
+    };
+
+	
+	</script>
+</body>
+</html>
